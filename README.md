@@ -85,3 +85,16 @@ Validate task structure:
 ```powershell
 .\scripts\harness-validate.ps1 -TaskRoot ".\tmp\sample-task" -Strict
 ```
+
+## Agent Activity Dashboard
+
+Open `dashboard/index.html` in a browser to view a local animated dashboard for queue status.
+
+The dashboard can:
+
+- Render the built-in sample queue
+- Load a `session-queue.md` file from disk
+- Accept pasted queue markdown
+- Animate role cards by status: `todo`, `in-progress`, `done`, `blocked`, `skipped`
+
+It is fully static and does not send data to a server.

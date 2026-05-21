@@ -1,0 +1,78 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harness Agent Activity Dashboard</title>
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Harness Agent</p>
+      <h1>Activity Dashboard</h1>
+    </div>
+    <div class="status-summary" aria-live="polite">
+      <span id="summary-count">5 agents</span>
+      <span id="summary-active">1 active</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-label="Agent activity stage">
+      <div id="agent-grid" class="agent-grid"></div>
+    </section>
+
+    <aside class="control-panel" aria-label="Queue controls">
+      <div class="panel-section">
+        <h2>Queue Input</h2>
+        <label class="file-button">
+          <input id="queue-file" type="file" accept=".md,.txt">
+          Load session-queue.md
+        </label>
+        <button id="load-sample" type="button">Load Sample</button>
+      </div>
+
+      <div class="panel-section">
+        <label for="queue-text">Paste Queue Markdown</label>
+        <textarea id="queue-text" spellcheck="false"></textarea>
+        <button id="render-queue" type="button">Render Agents</button>
+      </div>
+
+      <div class="panel-section legend">
+        <h2>States</h2>
+        <div><span class="dot todo"></span>todo: coffee break</div>
+        <div><span class="dot in-progress"></span>in-progress: focused work</div>
+        <div><span class="dot done"></span>done: finished</div>
+        <div><span class="dot blocked"></span>blocked: needs decision</div>
+        <div><span class="dot skipped"></span>skipped: away</div>
+      </div>
+    </aside>
+  </main>
+
+  <template id="agent-card-template">
+    <article class="agent-card">
+      <div class="agent-scene">
+        <div class="agent-avatar" aria-hidden="true">
+          <div class="head"></div>
+          <div class="body"></div>
+          <div class="arm left"></div>
+          <div class="arm right"></div>
+          <div class="prop"></div>
+        </div>
+      </div>
+      <div class="agent-info">
+        <div class="agent-title-row">
+          <h2 class="agent-role"></h2>
+          <span class="agent-status"></span>
+        </div>
+        <p class="agent-id"></p>
+        <p class="agent-goal"></p>
+        <p class="agent-scope"></p>
+      </div>
+    </article>
+  </template>
+
+  <script src="src/app.js"></script>
+</body>
+</html>
