@@ -335,9 +335,9 @@ function py(value) { return value * renderSize.height; }
 function scenePoint(x, y, z = 0) {
   const { width, height } = renderSize;
   const originX = width * 0.50;
-  const originY = height * 0.32;
-  const floorW = width * 0.78;
-  const floorH = height * 0.50;
+  const originY = height * 0.43;
+  const floorW = width * 0.68;
+  const floorH = height * 0.40;
   const u = x - 0.5;
   const v = y - 0.5;
   return {
@@ -482,10 +482,10 @@ function drawWorldBackground(time) {
 
 function drawIsometricRoom(time) {
   const floor = [
-    scenePoint(0.02, 0.05),
-    scenePoint(0.96, 0.05),
-    scenePoint(0.98, 0.94),
-    scenePoint(0.05, 0.98)
+    scenePoint(0.02, 0.08),
+    scenePoint(0.96, 0.08),
+    scenePoint(0.98, 0.92),
+    scenePoint(0.05, 0.96)
   ];
 
   ctx.save();
@@ -495,9 +495,9 @@ function drawIsometricRoom(time) {
   isoPolygon(floor, '#e8f0fb', 'rgba(87, 105, 132, 0.28)');
   ctx.restore();
 
-  const backLeft = scenePoint(0.02, 0.05);
-  const backRight = scenePoint(0.96, 0.05);
-  const wallLift = renderSize.height * 0.22;
+  const backLeft = scenePoint(0.02, 0.08);
+  const backRight = scenePoint(0.96, 0.08);
+  const wallLift = renderSize.height * 0.18;
   const wall = ctx.createLinearGradient(0, backLeft.y - wallLift, 0, backLeft.y + 60);
   wall.addColorStop(0, 'rgba(255,255,255,0.80)');
   wall.addColorStop(1, 'rgba(213,228,248,0.42)');
@@ -516,12 +516,43 @@ function drawIsometricRoom(time) {
   }
   ctx.restore();
 
+  drawExteriorDetails(backLeft, backRight, wallLift, time);
+
   const pulse = 0.20 + Math.sin(time / 1200) * 0.03;
   const spot = ctx.createRadialGradient(renderSize.width * 0.5, renderSize.height * 0.38, 0, renderSize.width * 0.5, renderSize.height * 0.38, renderSize.width * 0.55);
   spot.addColorStop(0, `rgba(255, 255, 255, ${pulse})`);
   spot.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = spot;
   ctx.fillRect(0, 0, renderSize.width, renderSize.height);
+}
+
+function drawExteriorDetails(backLeft, backRight, wallLift, time) {
+  const width = backRight.x - backLeft.x;
+  ctx.save();
+  ctx.globalAlpha = 0.72;
+  for (let i = 0; i < 8; i += 1) {
+    const x = backLeft.x + width * (0.08 + i * 0.11);
+    const y = backLeft.y - wallLift - 14 + Math.sin(time / 1200 + i) * 2;
+    fillRoundRect(ctx, x - 20, y, 40, 8, 5, 'rgba(255,255,255,0.88)', 'rgba(111,130,158,0.22)');
+    ctx.fillStyle = 'rgba(56, 86, 133, 0.18)';
+    ctx.fillRect(x - 18, y + 14, 7, 24 + (i % 3) * 6);
+    ctx.fillRect(x - 6, y + 8, 9, 34 + (i % 2) * 8);
+    ctx.fillRect(x + 8, y + 18, 7, 22 + (i % 4) * 5);
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = 0.42;
+  ctx.strokeStyle = 'rgba(45, 114, 217, 0.28)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 5; i += 1) {
+    const y = backLeft.y + 18 + i * 14;
+    ctx.beginPath();
+    ctx.moveTo(backLeft.x + 30, y);
+    ctx.lineTo(backRight.x - 30, y);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawZones() {
@@ -825,38 +856,52 @@ function drawAgent(agent, x, y, time) {
 
   ctx.fillStyle = 'rgba(24, 35, 52, 0.24)';
   ctx.beginPath();
-  ctx.ellipse(0, 42, 34, 11, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 58, 42, 11, 0, 0, Math.PI * 2);
   ctx.fill();
 
   drawAgentProp(agent, primary, accent, time);
 
-  const body = ctx.createLinearGradient(0, -16, 0, 42);
-  body.addColorStop(0, accent);
-  body.addColorStop(1, primary);
-  ctx.strokeStyle = '#1d2738';
+  const body = ctx.createLinearGradient(0, -52, 0, 52);
+  body.addColorStop(0, '#ffb5c9');
+  body.addColorStop(0.58, '#f47fa8');
+  body.addColorStop(1, '#dc5f93');
+  ctx.strokeStyle = 'rgba(94,36,56,0.48)';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
 
-  drawSoftLimb(-17, 5, -29 + walk * 5, 26, accent);
-  drawSoftLimb(17, 5, 29 - walk * 5, 26, accent);
-  drawSoftLimb(-9, 35, -18 - walk * 7, 55, primary);
-  drawSoftLimb(9, 35, 18 + walk * 7, 55, primary);
+  drawMascotTail(time);
+  drawSoftLimb(-28, 4, -42 + walk * 4, 33, '#ea7aa4');
+  drawSoftLimb(28, 4, 42 - walk * 4, 33, '#ea7aa4');
+  drawSoftLimb(-13, 39, -25 - walk * 6, 62, '#7a2e45');
+  drawSoftLimb(13, 39, 25 + walk * 6, 62, '#7a2e45');
 
-  fillRoundRect(ctx, -24, -8, 48, 54, 22, body, '#1d2738');
-  ctx.fillStyle = 'rgba(255,255,255,0.24)';
+  ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.ellipse(-9, 6, 8, 20, -0.28, 0, Math.PI * 2);
+  ctx.ellipse(0, 8, 34, 52, -0.08, 0, Math.PI * 2);
   ctx.fill();
+  ctx.stroke();
 
-  drawCuteHead(primary, accent, blink, time + agent.phase * 100);
+  ctx.fillStyle = '#fff4ef';
+  ctx.beginPath();
+  ctx.ellipse(8, 21, 18, 30, -0.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(122,46,69,0.12)';
+  ctx.stroke();
+
+  drawMascotHead(agent, primary, blink, time + agent.phase * 100);
+
+  ctx.fillStyle = primary;
+  ctx.beginPath();
+  ctx.arc(-24, 22, 4, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 
-  drawAgentLabel(agent, x, y - 66 * scale);
+  drawAgentLabel(agent, x, y + 84 * scale);
 }
 
 function drawSoftLimb(x1, y1, x2, y2, fill) {
-  ctx.strokeStyle = '#1d2738';
+  ctx.strokeStyle = 'rgba(94, 36, 56, 0.54)';
   ctx.lineWidth = 11;
   ctx.beginPath();
   ctx.moveTo(x1, y1);
@@ -870,73 +915,150 @@ function drawSoftLimb(x1, y1, x2, y2, fill) {
   ctx.stroke();
 }
 
-function drawCuteHead(primary, accent, blink, time) {
+function drawMascotTail(time) {
   ctx.save();
-  ctx.translate(0, -33);
-
-  ctx.fillStyle = accent;
-  ctx.beginPath();
-  ctx.arc(-17, -17, 11, 0, Math.PI * 2);
-  ctx.arc(17, -17, 11, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#1d2738';
+  ctx.fillStyle = '#ea7aa4';
+  ctx.strokeStyle = 'rgba(94, 36, 56, 0.42)';
   ctx.lineWidth = 3;
+  ctx.translate(-32, 22 + Math.sin(time / 520) * 1.5);
+  ctx.rotate(-0.3);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 18, 24, 0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMascotHead(agent, primary, blink, time) {
+  ctx.save();
+  ctx.translate(0, -47);
+
+  ctx.fillStyle = '#f69aba';
+  ctx.strokeStyle = 'rgba(94, 36, 56, 0.38)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(-26, -22, 9, 0, Math.PI * 2);
+  ctx.arc(26, -22, 9, 0, Math.PI * 2);
+  ctx.fill();
   ctx.stroke();
 
-  const head = ctx.createLinearGradient(0, -35, 0, 12);
-  head.addColorStop(0, '#fff8ed');
-  head.addColorStop(1, '#ffd1a3');
+  drawHeartAntenna(time);
+
+  const head = ctx.createRadialGradient(-12, -22, 5, 4, -2, 52);
+  head.addColorStop(0, '#ffc1d2');
+  head.addColorStop(0.62, '#f785ab');
+  head.addColorStop(1, '#df6598');
   ctx.fillStyle = head;
   ctx.beginPath();
-  ctx.ellipse(0, -4, 24, 27, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -2, 42, 39, 0.04, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = primary;
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
   ctx.beginPath();
-  ctx.ellipse(0, -24, 23, 13, 0.02, Math.PI, Math.PI * 2);
+  ctx.ellipse(-16, -16, 10, 20, -0.45, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.ellipse(-8, -7, 6, 7, 0, 0, Math.PI * 2);
-  ctx.ellipse(8, -7, 6, 7, 0, 0, Math.PI * 2);
-  ctx.fill();
+  drawMascotFace(agent, primary, blink, time);
 
+  ctx.restore();
+}
+
+function drawHeartAntenna(time) {
+  ctx.save();
+  ctx.translate(0, -45 + Math.sin(time / 600) * 1.4);
+  ctx.strokeStyle = '#bd244e';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 14);
+  ctx.quadraticCurveTo(1, 2, -11, -3);
+  ctx.bezierCurveTo(-30, -11, -28, -32, -8, -24);
+  ctx.quadraticCurveTo(0, -37, 9, -24);
+  ctx.bezierCurveTo(29, -32, 31, -10, 12, -3);
+  ctx.quadraticCurveTo(1, 2, 0, 14);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMascotFace(agent, primary, blink, time) {
   ctx.fillStyle = '#172033';
   if (blink) {
     ctx.strokeStyle = '#172033';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(-13, -7);
-    ctx.lineTo(-4, -7);
-    ctx.moveTo(4, -7);
-    ctx.lineTo(13, -7);
+    ctx.moveTo(-18, -7);
+    ctx.lineTo(-9, -7);
+    ctx.moveTo(9, -7);
+    ctx.lineTo(18, -7);
     ctx.stroke();
   } else {
     ctx.beginPath();
-    ctx.arc(-8, -7, 2.8, 0, Math.PI * 2);
-    ctx.arc(8, -7, 2.8, 0, Math.PI * 2);
+    ctx.arc(-13, -8, 4.2, 0, Math.PI * 2);
+    ctx.arc(13, -8, 4.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(-9, -9, 1.1, 0, Math.PI * 2);
-    ctx.arc(7, -9, 1.1, 0, Math.PI * 2);
+    ctx.arc(-14, -10, 1.4, 0, Math.PI * 2);
+    ctx.arc(12, -10, 1.4, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  ctx.strokeStyle = '#8a4d35';
-  ctx.lineWidth = 2;
+  const nose = ctx.createRadialGradient(-4, 2, 2, 0, 2, 12);
+  nose.addColorStop(0, '#9a4962');
+  nose.addColorStop(1, '#6c2a43');
+  ctx.fillStyle = nose;
   ctx.beginPath();
-  ctx.arc(0, 2, 6, 0.2, Math.PI - 0.2);
-  ctx.stroke();
-
-  ctx.fillStyle = `rgba(255, 128, 148, ${0.22 + Math.sin(time / 700) * 0.06})`;
-  ctx.beginPath();
-  ctx.arc(-16, 0, 5, 0, Math.PI * 2);
-  ctx.arc(16, 0, 5, 0, Math.PI * 2);
+  ctx.ellipse(0, 3, 10, 8, -0.1, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.strokeStyle = '#5f263c';
+  ctx.fillStyle = '#fff4ef';
+  ctx.lineWidth = 2.4;
+  if (agent.status === 'blocked') {
+    ctx.beginPath();
+    ctx.arc(0, 19, 7, Math.PI + 0.15, Math.PI * 2 - 0.15);
+    ctx.stroke();
+    drawSweatDrop(24, -18, time);
+  } else if (agent.status === 'in-progress') {
+    ctx.beginPath();
+    ctx.ellipse(1, 18, 7, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    drawSweatDrop(25, -17, time);
+  } else if (agent.status === 'done') {
+    ctx.beginPath();
+    ctx.arc(0, 12, 11, 0.12, Math.PI - 0.12);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, 12, 9, 0.18, Math.PI - 0.18);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = `rgba(255, 138, 158, ${0.24 + Math.sin(time / 700) * 0.05})`;
+  ctx.beginPath();
+  ctx.arc(-23, 7, 6, 0, Math.PI * 2);
+  ctx.arc(23, 7, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = primary;
+  ctx.globalAlpha = 0.85;
+  ctx.beginPath();
+  ctx.arc(0, 31, 3.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawSweatDrop(x, y, time) {
+  ctx.save();
+  ctx.translate(x, y + Math.sin(time / 280) * 1.5);
+  ctx.fillStyle = '#4da3ff';
+  ctx.beginPath();
+  ctx.moveTo(0, -7);
+  ctx.bezierCurveTo(8, 1, 5, 11, 0, 12);
+  ctx.bezierCurveTo(-6, 11, -8, 1, 0, -7);
+  ctx.fill();
   ctx.restore();
 }
 
