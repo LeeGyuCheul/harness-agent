@@ -95,7 +95,8 @@ The dashboard can:
 - Render the built-in sample queue
 - Load a `session-queue.md` file from disk
 - Accept pasted queue markdown
-- Animate role cards by status: `todo`, `in-progress`, `done`, `blocked`, `skipped`
+- Render a Canvas-based mini office simulation
+- Move agents between workspace zones by status: `todo`, `in-progress`, `done`, `blocked`, `skipped`
 
 It is fully static and does not send data to a server.
 

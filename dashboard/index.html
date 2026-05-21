@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -23,51 +23,12 @@
       <div class="world-toolbar">
         <div>
           <h2>Live Workspace</h2>
-          <p>Agents walk between work, review, lounge, game, and gym zones based on queue status.</p>
+          <p>Canvas office simulation driven by the session queue.</p>
         </div>
         <button id="shuffle-agents" type="button">Shuffle Movement</button>
       </div>
-
-      <div id="world" class="world" aria-live="polite">
-        <div class="ambient ambient-a"></div>
-        <div class="ambient ambient-b"></div>
-        <div class="ceiling-light light-a"></div>
-        <div class="ceiling-light light-b"></div>
-        <div class="zone zone-work" data-zone="Workstations">
-          <div class="desk desk-a"></div>
-          <div class="desk desk-b"></div>
-          <div class="monitor monitor-a"></div>
-          <div class="monitor monitor-b"></div>
-        </div>
-        <div class="zone zone-docs" data-zone="Document Table">
-          <div class="paper-stack stack-a"></div>
-          <div class="paper-stack stack-b"></div>
-        </div>
-        <div class="zone zone-review" data-zone="Review Board">
-          <div class="board-line"></div>
-          <div class="board-line short"></div>
-          <div class="board-check"></div>
-        </div>
-        <div class="zone zone-lounge" data-zone="Lounge">
-          <div class="sofa"></div>
-          <div class="coffee-table"></div>
-        </div>
-        <div class="zone zone-game" data-zone="Game Corner">
-          <div class="game-screen"></div>
-          <div class="game-pad"></div>
-        </div>
-        <div class="zone zone-gym" data-zone="Gym Corner">
-          <div class="mat"></div>
-          <div class="weight weight-a"></div>
-          <div class="weight weight-b"></div>
-        </div>
-        <div class="zone zone-blocked" data-zone="Decision Desk">
-          <div class="warning-board"></div>
-          <div class="question-mark">?</div>
-        </div>
-        <div class="walkway horizontal"></div>
-        <div class="walkway vertical"></div>
-        <div id="agent-layer" class="agent-layer"></div>
+      <div class="canvas-shell">
+        <canvas id="world-canvas" aria-label="Animated harness agent office"></canvas>
       </div>
     </section>
 
@@ -100,11 +61,11 @@
 
       <div class="panel-section legend">
         <h2>States</h2>
-        <div><span class="dot todo"></span>todo: moves between lounge, game, and gym</div>
-        <div><span class="dot in-progress"></span>in-progress: walks to desks and documents</div>
-        <div><span class="dot done"></span>done: celebrates near review board</div>
-        <div><span class="dot blocked"></span>blocked: goes to decision desk</div>
-        <div><span class="dot skipped"></span>skipped: stays away from active floor</div>
+        <div><span class="dot todo"></span>todo: lounge, game, gym</div>
+        <div><span class="dot in-progress"></span>in-progress: desk, docs, review</div>
+        <div><span class="dot done"></span>done: review board</div>
+        <div><span class="dot blocked"></span>blocked: decision desk</div>
+        <div><span class="dot skipped"></span>skipped: edge of floor</div>
       </div>
 
       <div class="panel-section activity-log">
