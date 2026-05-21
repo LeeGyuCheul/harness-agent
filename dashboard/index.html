@@ -14,13 +14,57 @@
     </div>
     <div class="status-summary" aria-live="polite">
       <span id="summary-count">5 agents</span>
-      <span id="summary-active">1 active</span>
+      <span id="summary-active">2 active</span>
     </div>
   </header>
 
   <main class="layout">
-    <section class="stage" aria-label="Agent activity stage">
-      <div id="agent-grid" class="agent-grid"></div>
+    <section class="world-panel" aria-label="Animated agent workspace">
+      <div class="world-toolbar">
+        <div>
+          <h2>Live Workspace</h2>
+          <p>Agents walk between work, review, lounge, game, and gym zones based on queue status.</p>
+        </div>
+        <button id="shuffle-agents" type="button">Shuffle Movement</button>
+      </div>
+
+      <div id="world" class="world" aria-live="polite">
+        <div class="zone zone-work" data-zone="Workstations">
+          <div class="desk desk-a"></div>
+          <div class="desk desk-b"></div>
+          <div class="monitor monitor-a"></div>
+          <div class="monitor monitor-b"></div>
+        </div>
+        <div class="zone zone-docs" data-zone="Document Table">
+          <div class="paper-stack stack-a"></div>
+          <div class="paper-stack stack-b"></div>
+        </div>
+        <div class="zone zone-review" data-zone="Review Board">
+          <div class="board-line"></div>
+          <div class="board-line short"></div>
+          <div class="board-check"></div>
+        </div>
+        <div class="zone zone-lounge" data-zone="Lounge">
+          <div class="sofa"></div>
+          <div class="coffee-table"></div>
+        </div>
+        <div class="zone zone-game" data-zone="Game Corner">
+          <div class="game-screen"></div>
+          <div class="game-pad"></div>
+        </div>
+        <div class="zone zone-gym" data-zone="Gym Corner">
+          <div class="mat"></div>
+          <div class="weight weight-a"></div>
+          <div class="weight weight-b"></div>
+        </div>
+        <div class="zone zone-blocked" data-zone="Decision Desk">
+          <div class="warning-board"></div>
+          <div class="question-mark">?</div>
+        </div>
+        <div class="walkway horizontal"></div>
+        <div class="walkway vertical"></div>
+        <div id="agent-layer" class="agent-layer"></div>
+      </div>
     </section>
 
     <aside class="control-panel" aria-label="Queue controls">
@@ -41,37 +85,19 @@
 
       <div class="panel-section legend">
         <h2>States</h2>
-        <div><span class="dot todo"></span>todo: coffee break</div>
-        <div><span class="dot in-progress"></span>in-progress: focused work</div>
-        <div><span class="dot done"></span>done: finished</div>
-        <div><span class="dot blocked"></span>blocked: needs decision</div>
-        <div><span class="dot skipped"></span>skipped: away</div>
+        <div><span class="dot todo"></span>todo: moves between lounge, game, and gym</div>
+        <div><span class="dot in-progress"></span>in-progress: walks to desks and documents</div>
+        <div><span class="dot done"></span>done: celebrates near review board</div>
+        <div><span class="dot blocked"></span>blocked: goes to decision desk</div>
+        <div><span class="dot skipped"></span>skipped: stays away from active floor</div>
+      </div>
+
+      <div class="panel-section activity-log">
+        <h2>Agent Activity</h2>
+        <div id="activity-list"></div>
       </div>
     </aside>
   </main>
-
-  <template id="agent-card-template">
-    <article class="agent-card">
-      <div class="agent-scene">
-        <div class="agent-avatar" aria-hidden="true">
-          <div class="head"></div>
-          <div class="body"></div>
-          <div class="arm left"></div>
-          <div class="arm right"></div>
-          <div class="prop"></div>
-        </div>
-      </div>
-      <div class="agent-info">
-        <div class="agent-title-row">
-          <h2 class="agent-role"></h2>
-          <span class="agent-status"></span>
-        </div>
-        <p class="agent-id"></p>
-        <p class="agent-goal"></p>
-        <p class="agent-scope"></p>
-      </div>
-    </article>
-  </template>
 
   <script src="src/app.js"></script>
 </body>

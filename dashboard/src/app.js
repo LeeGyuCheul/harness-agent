@@ -16,30 +16,86 @@ const roleFallback = [
   { id: 'TASK-DC-001', role: 'docs', status: 'todo', scope: 'Documentation', goal: 'Maintain handoff and records' }
 ];
 
-const roleAction = {
-  main: 'planning at the board',
-  analysis: 'reading evidence',
-  worker: 'typing changes',
-  verify: 'checking results',
-  docs: 'organizing notes'
-};
-
 const statusLabel = {
-  todo: 'coffee break',
+  todo: 'off duty',
   'in-progress': 'working',
   done: 'complete',
-  blocked: 'blocked',
+  blocked: 'needs decision',
   skipped: 'away'
 };
 
-const grid = document.querySelector('#agent-grid');
-const template = document.querySelector('#agent-card-template');
+const actionCopy = {
+  main: {
+    'in-progress': 'writing the plan at the board',
+    todo: 'checking the lounge schedule',
+    done: 'reviewing the finished board',
+    blocked: 'waiting at the decision desk',
+    skipped: 'away from the floor'
+  },
+  analysis: {
+    'in-progress': 'reading evidence at the document table',
+    todo: 'taking a coffee break',
+    done: 'placing notes on the review board',
+    blocked: 'flagging an open question',
+    skipped: 'away from the floor'
+  },
+  worker: {
+    'in-progress': 'typing at a workstation',
+    todo: 'playing a quick game',
+    done: 'leaving the keyboard clean',
+    blocked: 'waiting for ownership details',
+    skipped: 'away from the floor'
+  },
+  verify: {
+    'in-progress': 'checking the review board',
+    todo: 'stretching in the gym corner',
+    done: 'marking verification complete',
+    blocked: 'holding a failed check',
+    skipped: 'away from the floor'
+  },
+  docs: {
+    'in-progress': 'sorting handoff notes',
+    todo: 'reading in the lounge',
+    done: 'stacking completed notes',
+    blocked: 'waiting for missing evidence',
+    skipped: 'away from the floor'
+  }
+};
+
+const zonePoints = {
+  work: [{ x: 18, y: 24 }, { x: 34, y: 26 }, { x: 25, y: 35 }],
+  docs: [{ x: 55, y: 24 }, { x: 64, y: 27 }, { x: 58, y: 34 }],
+  review: [{ x: 80, y: 24 }, { x: 89, y: 26 }, { x: 83, y: 35 }],
+  lounge: [{ x: 14, y: 76 }, { x: 25, y: 82 }, { x: 19, y: 68 }],
+  game: [{ x: 43, y: 78 }, { x: 54, y: 80 }, { x: 49, y: 70 }],
+  gym: [{ x: 75, y: 80 }, { x: 88, y: 79 }, { x: 81, y: 70 }],
+  blocked: [{ x: 78, y: 51 }, { x: 88, y: 53 }, { x: 83, y: 59 }],
+  away: [{ x: 7, y: 50 }, { x: 93, y: 48 }, { x: 50, y: 92 }]
+};
+
+const roleTargetZone = {
+  main: 'review',
+  analysis: 'docs',
+  worker: 'work',
+  verify: 'review',
+  docs: 'docs'
+};
+
+const idleZones = ['lounge', 'game', 'gym'];
+
+const world = document.querySelector('#world');
+const layer = document.querySelector('#agent-layer');
 const queueText = document.querySelector('#queue-text');
 const renderButton = document.querySelector('#render-queue');
 const sampleButton = document.querySelector('#load-sample');
 const fileInput = document.querySelector('#queue-file');
+const shuffleButton = document.querySelector('#shuffle-agents');
 const summaryCount = document.querySelector('#summary-count');
 const summaryActive = document.querySelector('#summary-active');
+const activityList = document.querySelector('#activity-list');
+
+let agents = [];
+let lastTime = performance.now();
 
 function normalizeStatus(value) {
   const status = String(value || '').trim().toLowerCase();
@@ -83,28 +139,167 @@ function parseQueue(markdown) {
   });
 }
 
-function renderAgents(items) {
-  grid.innerHTML = '';
-  items.forEach(item => {
-    const node = template.content.firstElementChild.cloneNode(true);
-    node.dataset.role = item.role;
-    node.dataset.status = item.status;
-    node.querySelector('.agent-role').textContent = item.role;
-    node.querySelector('.agent-status').textContent = statusLabel[item.status] || item.status;
-    node.querySelector('.agent-id').textContent = item.id;
-    node.querySelector('.agent-goal').textContent = item.goal;
-    node.querySelector('.agent-scope').textContent = `${item.scope} · ${roleAction[item.role] || 'working'}`;
-    grid.appendChild(node);
-  });
+function pick(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 
+function pointForZone(zone) {
+  const point = pick(zonePoints[zone] || zonePoints.lounge);
+  return {
+    x: point.x + (Math.random() * 5 - 2.5),
+    y: point.y + (Math.random() * 5 - 2.5)
+  };
+}
+
+function targetZoneFor(item) {
+  if (item.status === 'blocked') return 'blocked';
+  if (item.status === 'skipped') return 'away';
+  if (item.status === 'done') return 'review';
+  if (item.status === 'todo') return pick(idleZones);
+  return roleTargetZone[item.role] || 'work';
+}
+
+function activityFor(item, zone) {
+  if (item.status === 'todo') {
+    if (zone === 'game') return 'playing a quick game';
+    if (zone === 'gym') return 'stretching in the gym corner';
+    return 'drinking coffee in the lounge';
+  }
+  return actionCopy[item.role]?.[item.status] || statusLabel[item.status] || 'moving';
+}
+
+function createAgentElement(item) {
+  const node = document.createElement('div');
+  node.className = 'agent walking';
+  node.dataset.role = item.role;
+  node.dataset.status = item.status;
+  node.innerHTML = `
+    <div class="agent-label"></div>
+    <div class="agent-head"></div>
+    <div class="agent-body"></div>
+    <div class="agent-arm left"></div>
+    <div class="agent-arm right"></div>
+    <div class="agent-leg left"></div>
+    <div class="agent-leg right"></div>
+    <div class="agent-prop"></div>
+  `;
+  node.querySelector('.agent-label').textContent = `${item.role} · ${statusLabel[item.status]}`;
+  return node;
+}
+
+function classForActivity(item, zone, moving) {
+  const classes = ['agent'];
+  if (moving) classes.push('walking');
+  if (item.status === 'in-progress') classes.push('working');
+  if (item.status === 'todo') classes.push('resting');
+  if (item.status === 'done') classes.push('done');
+  if (item.status === 'blocked') classes.push('blocked');
+  if (zone === 'gym') classes.push('gym');
+  if (zone === 'game') classes.push('game');
+  if (item.role === 'docs' || zone === 'docs') classes.push('docs');
+  return classes.join(' ');
+}
+
+function buildAgents(items) {
+  layer.innerHTML = '';
+  agents = items.map((item, index) => {
+    const zone = targetZoneFor(item);
+    const start = pointForZone(pick(['lounge', 'game', 'work', 'docs', 'review']));
+    const target = pointForZone(zone);
+    const node = createAgentElement(item);
+    layer.appendChild(node);
+    return {
+      ...item,
+      node,
+      x: start.x,
+      y: start.y,
+      targetX: target.x,
+      targetY: target.y,
+      zone,
+      speed: 10 + index * 1.5 + Math.random() * 6,
+      pauseUntil: 0,
+      activity: activityFor(item, zone)
+    };
+  });
+  updateSummaries(items);
+  updateActivityList();
+}
+
+function updateSummaries(items) {
   const active = items.filter(item => item.status === 'in-progress').length;
   const blocked = items.filter(item => item.status === 'blocked').length;
   summaryCount.textContent = `${items.length} agents`;
   summaryActive.textContent = blocked ? `${active} active · ${blocked} blocked` : `${active} active`;
 }
 
+function updateActivityList() {
+  activityList.innerHTML = '';
+  agents.forEach(agent => {
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.innerHTML = `<strong>${agent.id}</strong><span>${agent.activity}</span><span>${agent.goal}</span>`;
+    activityList.appendChild(item);
+  });
+}
+
+function assignNewTarget(agent, forceIdleSwitch = false) {
+  let zone = targetZoneFor(agent);
+  if (agent.status === 'todo' && forceIdleSwitch) zone = pick(idleZones);
+  agent.zone = zone;
+  const target = pointForZone(zone);
+  agent.targetX = target.x;
+  agent.targetY = target.y;
+  agent.activity = activityFor(agent, zone);
+}
+
+function shuffleAgents() {
+  agents.forEach(agent => {
+    assignNewTarget(agent, true);
+    agent.pauseUntil = 0;
+  });
+  updateActivityList();
+}
+
 function renderFromText() {
-  renderAgents(parseQueue(queueText.value));
+  buildAgents(parseQueue(queueText.value));
+}
+
+function updateAgent(agent, delta, bounds, now) {
+  const dx = agent.targetX - agent.x;
+  const dy = agent.targetY - agent.y;
+  const distance = Math.hypot(dx, dy);
+  const moving = distance > 0.7 && now > agent.pauseUntil;
+
+  if (moving) {
+    const step = Math.min(distance, agent.speed * delta);
+    agent.x += (dx / distance) * step;
+    agent.y += (dy / distance) * step;
+  } else if (now > agent.pauseUntil) {
+    agent.pauseUntil = now + 900 + Math.random() * 1800;
+    if (agent.status === 'todo' || agent.status === 'in-progress') {
+      setTimeout(() => {
+        assignNewTarget(agent, agent.status === 'todo');
+        updateActivityList();
+      }, agent.pauseUntil - now);
+    }
+  }
+
+  const pixelX = (agent.x / 100) * Math.max(1, bounds.width - 58);
+  const pixelY = (agent.y / 100) * Math.max(1, bounds.height - 92);
+  agent.node.style.transform = `translate3d(${pixelX}px, ${pixelY}px, 0)`;
+  agent.node.style.zIndex = String(20 + Math.round(pixelY));
+  agent.node.className = classForActivity(agent, agent.zone, moving);
+  agent.node.dataset.role = agent.role;
+  agent.node.dataset.status = agent.status;
+  agent.node.querySelector('.agent-label').textContent = `${agent.role} · ${statusLabel[agent.status]}`;
+}
+
+function animate(now) {
+  const delta = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  const bounds = world.getBoundingClientRect();
+  agents.forEach(agent => updateAgent(agent, delta, bounds, now));
+  requestAnimationFrame(animate);
 }
 
 sampleButton.addEventListener('click', () => {
@@ -113,6 +308,7 @@ sampleButton.addEventListener('click', () => {
 });
 
 renderButton.addEventListener('click', renderFromText);
+shuffleButton.addEventListener('click', shuffleAgents);
 
 fileInput.addEventListener('change', async event => {
   const file = event.target.files?.[0];
@@ -123,3 +319,4 @@ fileInput.addEventListener('change', async event => {
 
 queueText.value = sampleQueue;
 renderFromText();
+requestAnimationFrame(animate);
