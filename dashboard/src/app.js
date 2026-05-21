@@ -182,7 +182,10 @@ function createAgentElement(item) {
   node.dataset.status = item.status;
   node.innerHTML = `
     <div class="agent-label"></div>
+    <div class="agent-shadow"></div>
     <div class="agent-head"></div>
+    <div class="agent-hair"></div>
+    <div class="agent-face"></div>
     <div class="agent-body"></div>
     <div class="agent-arm left"></div>
     <div class="agent-arm right"></div>
@@ -201,6 +204,7 @@ function classForActivity(item, zone, moving) {
   if (item.status === 'todo') classes.push('resting');
   if (item.status === 'done') classes.push('done');
   if (item.status === 'blocked') classes.push('blocked');
+  if (item.status === 'skipped') classes.push('skipped');
   if (zone === 'gym') classes.push('gym');
   if (zone === 'game') classes.push('game');
   if (item.role === 'docs' || zone === 'docs') classes.push('docs');
@@ -350,7 +354,8 @@ function updateAgent(agent, delta, bounds, now) {
 
   const pixelX = (agent.x / 100) * Math.max(1, bounds.width - 58);
   const pixelY = (agent.y / 100) * Math.max(1, bounds.height - 92);
-  agent.node.style.transform = `translate3d(${pixelX}px, ${pixelY}px, 0)`;
+  const bob = moving ? Math.sin(now / 120) * 1.7 : Math.sin(now / 900) * 0.7;
+  agent.node.style.transform = `translate3d(${pixelX}px, ${pixelY + bob}px, 0)`;
   agent.node.style.zIndex = String(20 + Math.round(pixelY));
   agent.node.className = classForActivity(agent, agent.zone, moving);
   agent.node.dataset.role = agent.role;
