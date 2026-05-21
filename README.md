@@ -95,7 +95,7 @@ The dashboard can:
 - Render the built-in sample queue
 - Load a `session-queue.md` file from disk
 - Accept pasted queue markdown
-- Render a Canvas-based isometric workspace simulation with pink mascot agent avatars
+- Render a Canvas-based life-simulation-style isometric house with original agent avatars
 - Move agents between workspace zones by status: `todo`, `in-progress`, `done`, `blocked`, `skipped`
 
 It is fully static and does not send data to a server.
