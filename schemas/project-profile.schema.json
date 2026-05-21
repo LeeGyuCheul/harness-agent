@@ -1,0 +1,48 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/harness-agent/project-profile.schema.json",
+  "title": "Harness Project Profile",
+  "type": "object",
+  "required": ["projectName", "domain", "defaultLanguage", "paths", "repositories", "commands", "restrictions"],
+  "properties": {
+    "projectName": { "type": "string", "minLength": 1 },
+    "domain": { "type": "string", "minLength": 1 },
+    "defaultLanguage": { "type": "string", "minLength": 1 },
+    "mainStack": { "type": "array", "items": { "type": "string" } },
+    "paths": {
+      "type": "object",
+      "required": ["workspaceRoot", "harnessRoot", "taskRoot"],
+      "properties": {
+        "workspaceRoot": { "type": "string", "minLength": 1 },
+        "harnessRoot": { "type": "string", "minLength": 1 },
+        "taskRoot": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "commands": {
+      "type": "object",
+      "properties": {
+        "build": { "type": "string" },
+        "test": { "type": "string" },
+        "verify": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "verificationAuthority": { "type": "array", "items": { "type": "string" } },
+    "restrictions": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

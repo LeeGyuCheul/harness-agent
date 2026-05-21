@@ -1,0 +1,29 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/harness-agent/session-queue.schema.json",
+  "title": "Harness Session Queue",
+  "type": "object",
+  "required": ["taskName", "overallStatus", "items"],
+  "properties": {
+    "taskName": { "type": "string", "minLength": 1 },
+    "overallStatus": { "enum": ["todo", "in-progress", "done", "blocked", "skipped"] },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "role", "status", "scope", "goal", "ownedFiles"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-(PM|AN|WK|VF|DC)-[0-9]{3}$" },
+          "role": { "enum": ["main", "analysis", "worker", "verify", "docs"] },
+          "status": { "enum": ["todo", "in-progress", "done", "blocked", "skipped"] },
+          "scope": { "type": "string" },
+          "goal": { "type": "string" },
+          "ownedFiles": { "type": "array", "items": { "type": "string" } },
+          "blocker": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -55,3 +55,33 @@ scripts/
 4. Ask the main PM agent to run the task using this harness model and the local project profile.
 
 The common harness stays generic. Local project rules stay local.
+
+## Operational Additions
+
+This kit also includes:
+
+- `prompts/`: role-specific start prompts for main, analysis, worker, verify, and docs sessions
+- `schemas/`: draft JSON schemas for future CLI/MCP validation
+- `scripts/harness-init.ps1`: creates a task folder from templates
+- `scripts/harness-validate.ps1`: checks queue and handoff structure
+- `docs/mcp-interface.md`: draft interface for a future MCP server
+
+## Quick Start With Scripts
+
+Create a task folder from templates:
+
+```powershell
+.\scripts\harness-init.ps1 -TaskName "Sample Task" -TaskRoot ".\tmp" -ProjectProfile "profiles/local-project.md" -Prefix "SAMPLE"
+```
+
+Check task status:
+
+```powershell
+.\scripts\harness-status.ps1 -TaskRoot ".\tmp\sample-task"
+```
+
+Validate task structure:
+
+```powershell
+.\scripts\harness-validate.ps1 -TaskRoot ".\tmp\sample-task" -Strict
+```
