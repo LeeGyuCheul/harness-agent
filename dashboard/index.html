@@ -69,6 +69,17 @@
 
     <aside class="control-panel" aria-label="Queue controls">
       <div class="panel-section">
+        <h2>Live Queue URL</h2>
+        <label for="queue-url">Remote session-queue.md URL</label>
+        <input id="queue-url" class="url-input" type="url" placeholder="https://.../session-queue.md">
+        <div class="sync-row">
+          <button id="start-sync" type="button">Start Sync</button>
+          <button id="stop-sync" type="button">Stop</button>
+        </div>
+        <p id="sync-status" class="sync-status">Not syncing</p>
+      </div>
+
+      <div class="panel-section">
         <h2>Queue Input</h2>
         <label class="file-button">
           <input id="queue-file" type="file" accept=".md,.txt">

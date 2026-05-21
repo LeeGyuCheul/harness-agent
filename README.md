@@ -98,3 +98,18 @@ The dashboard can:
 - Animate role cards by status: `todo`, `in-progress`, `done`, `blocked`, `skipped`
 
 It is fully static and does not send data to a server.
+
+### Remote Queue Sync
+
+The dashboard can poll a remote `session-queue.md` URL every five seconds. This does not call an AI model and does not spend tokens; it is browser `fetch` plus UI rendering.
+
+Recommended public or sanitized queue URL forms:
+
+```text
+https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>/session-queue.md
+https://<owner>.github.io/<repo>/<path>/session-queue.md
+```
+
+Do not sync private company queues through personal public URLs. For confidential work, use a company-approved host or a sanitized queue.
+
+Private GitHub raw URLs usually return `404` in the browser unless the content is public or served through an authenticated, approved gateway. Do not paste personal access tokens into dashboard URLs.

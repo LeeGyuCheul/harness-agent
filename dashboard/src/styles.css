@@ -306,6 +306,33 @@ button:hover, .file-button:hover { background: #eef4ff; }
 #load-sample { margin-left: 8px; }
 #render-queue { margin-top: 10px; width: 100%; background: #1f7ae0; color: white; border-color: #1f7ae0; }
 
+.url-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #b8c4d5;
+  border-radius: 7px;
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.sync-row {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sync-status {
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sync-status[data-state="ok"] { color: var(--done); }
+.sync-status[data-state="active"] { color: var(--active); }
+.sync-status[data-state="blocked"] { color: var(--blocked); }
+
 textarea {
   width: 100%;
   min-height: 230px;

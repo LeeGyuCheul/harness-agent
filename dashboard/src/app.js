@@ -90,12 +90,19 @@ const renderButton = document.querySelector('#render-queue');
 const sampleButton = document.querySelector('#load-sample');
 const fileInput = document.querySelector('#queue-file');
 const shuffleButton = document.querySelector('#shuffle-agents');
+const queueUrlInput = document.querySelector('#queue-url');
+const startSyncButton = document.querySelector('#start-sync');
+const stopSyncButton = document.querySelector('#stop-sync');
+const syncStatus = document.querySelector('#sync-status');
 const summaryCount = document.querySelector('#summary-count');
 const summaryActive = document.querySelector('#summary-active');
 const activityList = document.querySelector('#activity-list');
 
 let agents = [];
 let lastTime = performance.now();
+let syncTimer = null;
+let lastQueueHash = '';
+const syncIntervalMs = 5000;
 
 function normalizeStatus(value) {
   const status = String(value || '').trim().toLowerCase();
@@ -260,8 +267,65 @@ function shuffleAgents() {
   updateActivityList();
 }
 
+function hashText(value) {
+  let hash = 0;
+  const text = String(value || '');
+  for (let index = 0; index < text.length; index += 1) {
+    hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+  }
+  return String(hash);
+}
+
+function setSyncStatus(message, state = 'idle') {
+  syncStatus.textContent = message;
+  syncStatus.dataset.state = state;
+}
+
 function renderFromText() {
+  lastQueueHash = hashText(queueText.value);
   buildAgents(parseQueue(queueText.value));
+}
+
+async function fetchQueueOnce() {
+  const url = queueUrlInput.value.trim();
+  if (!url) {
+    setSyncStatus('Enter a remote queue URL first', 'blocked');
+    return;
+  }
+
+  try {
+    const separator = url.includes('?') ? '&' : '?';
+    const response = await fetch(`${url}${separator}_=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { Accept: 'text/plain, text/markdown, */*' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const text = await response.text();
+    const nextHash = hashText(text);
+    if (nextHash !== lastQueueHash) {
+      queueText.value = text;
+      lastQueueHash = nextHash;
+      buildAgents(parseQueue(text));
+      setSyncStatus(`Synced ${new Date().toLocaleTimeString()}`, 'ok');
+    } else {
+      setSyncStatus(`No change ${new Date().toLocaleTimeString()}`, 'ok');
+    }
+  } catch (error) {
+    setSyncStatus(`Sync failed: ${error.message}`, 'blocked');
+  }
+}
+
+function startSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  setSyncStatus('Sync starting...', 'active');
+  fetchQueueOnce();
+  syncTimer = setInterval(fetchQueueOnce, syncIntervalMs);
+}
+
+function stopSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = null;
+  setSyncStatus('Sync stopped', 'idle');
 }
 
 function updateAgent(agent, delta, bounds, now) {
@@ -309,6 +373,8 @@ sampleButton.addEventListener('click', () => {
 
 renderButton.addEventListener('click', renderFromText);
 shuffleButton.addEventListener('click', shuffleAgents);
+startSyncButton.addEventListener('click', startSync);
+stopSyncButton.addEventListener('click', stopSync);
 
 fileInput.addEventListener('change', async event => {
   const file = event.target.files?.[0];
