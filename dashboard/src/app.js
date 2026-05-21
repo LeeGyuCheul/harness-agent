@@ -332,6 +332,60 @@ function resizeCanvas() {
 function px(value) { return value * renderSize.width; }
 function py(value) { return value * renderSize.height; }
 
+function scenePoint(x, y, z = 0) {
+  const { width, height } = renderSize;
+  const originX = width * 0.50;
+  const originY = height * 0.32;
+  const floorW = width * 0.78;
+  const floorH = height * 0.50;
+  const u = x - 0.5;
+  const v = y - 0.5;
+  return {
+    x: originX + (u - v) * floorW,
+    y: originY + (u + v) * floorH - z
+  };
+}
+
+function isoPolygon(points, fill, stroke) {
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) ctx.moveTo(point.x, point.y);
+    else ctx.lineTo(point.x, point.y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+function isoRect(x, y, w, h, fill, stroke) {
+  const p1 = scenePoint(x, y);
+  const p2 = scenePoint(x + w, y);
+  const p3 = scenePoint(x + w, y + h);
+  const p4 = scenePoint(x, y + h);
+  isoPolygon([p1, p2, p3, p4], fill, stroke);
+  return [p1, p2, p3, p4];
+}
+
+function isoBox(x, y, w, h, z, top, left, right, stroke = 'rgba(44, 58, 82, 0.24)') {
+  const p1 = scenePoint(x, y, 0);
+  const p2 = scenePoint(x + w, y, 0);
+  const p3 = scenePoint(x + w, y + h, 0);
+  const p4 = scenePoint(x, y + h, 0);
+  const q1 = scenePoint(x, y, z);
+  const q2 = scenePoint(x + w, y, z);
+  const q3 = scenePoint(x + w, y + h, z);
+  const q4 = scenePoint(x, y + h, z);
+
+  isoPolygon([q4, q3, p3, p4], left, stroke);
+  isoPolygon([q2, q3, p3, p2], right, stroke);
+  isoPolygon([q1, q2, q3, q4], top, stroke);
+}
+
 function roundRect(context, x, y, w, h, r) {
   const radius = Math.min(r, w / 2, h / 2);
   context.beginPath();
@@ -376,21 +430,21 @@ function drawWorldBackground(time) {
   ctx.fillRect(0, 0, width, height);
 
   drawGlassWall(time);
+  drawIsometricRoom(time);
 
   ctx.save();
-  ctx.globalAlpha = 0.24;
-  for (let x = 0; x < width; x += 28) {
-    ctx.strokeStyle = '#cbd7e6';
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = '#cbd7e6';
+  for (let line = -0.1; line <= 1.1; line += 0.08) {
+    const a = scenePoint(line, 0.02);
+    const b = scenePoint(line, 0.98);
+    const c = scenePoint(0.02, line);
+    const d = scenePoint(0.98, line);
     ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
-  }
-  for (let y = 0; y < height; y += 28) {
-    ctx.strokeStyle = '#cbd7e6';
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.moveTo(c.x, c.y);
+    ctx.lineTo(d.x, d.y);
     ctx.stroke();
   }
   ctx.restore();
@@ -426,30 +480,73 @@ function drawWorldBackground(time) {
   drawAmbientDecor(time);
 }
 
+function drawIsometricRoom(time) {
+  const floor = [
+    scenePoint(0.02, 0.05),
+    scenePoint(0.96, 0.05),
+    scenePoint(0.98, 0.94),
+    scenePoint(0.05, 0.98)
+  ];
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(31, 42, 68, 0.22)';
+  ctx.shadowBlur = 34;
+  ctx.shadowOffsetY = 18;
+  isoPolygon(floor, '#e8f0fb', 'rgba(87, 105, 132, 0.28)');
+  ctx.restore();
+
+  const backLeft = scenePoint(0.02, 0.05);
+  const backRight = scenePoint(0.96, 0.05);
+  const wallLift = renderSize.height * 0.22;
+  const wall = ctx.createLinearGradient(0, backLeft.y - wallLift, 0, backLeft.y + 60);
+  wall.addColorStop(0, 'rgba(255,255,255,0.80)');
+  wall.addColorStop(1, 'rgba(213,228,248,0.42)');
+  isoPolygon([
+    { x: backLeft.x, y: backLeft.y },
+    { x: backRight.x, y: backRight.y },
+    { x: backRight.x, y: backRight.y - wallLift },
+    { x: backLeft.x, y: backLeft.y - wallLift }
+  ], wall, 'rgba(111,130,158,0.18)');
+
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  for (let i = 0; i < 7; i += 1) {
+    const x = backLeft.x + 40 + i * ((backRight.x - backLeft.x - 80) / 6);
+    fillRoundRect(ctx, x - 24, backLeft.y - wallLift + 28, 48, 58, 8, 'rgba(255,255,255,0.42)', 'rgba(121,142,172,0.20)');
+  }
+  ctx.restore();
+
+  const pulse = 0.20 + Math.sin(time / 1200) * 0.03;
+  const spot = ctx.createRadialGradient(renderSize.width * 0.5, renderSize.height * 0.38, 0, renderSize.width * 0.5, renderSize.height * 0.38, renderSize.width * 0.55);
+  spot.addColorStop(0, `rgba(255, 255, 255, ${pulse})`);
+  spot.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = spot;
+  ctx.fillRect(0, 0, renderSize.width, renderSize.height);
+}
+
 function drawZones() {
   Object.entries(zones).forEach(([key, zone]) => {
     if (key === 'away') return;
-    const x = px(zone.x);
-    const y = py(zone.y);
-    const w = px(zone.w);
-    const h = py(zone.h);
+    const points = [
+      scenePoint(zone.x, zone.y),
+      scenePoint(zone.x + zone.w, zone.y),
+      scenePoint(zone.x + zone.w, zone.y + zone.h),
+      scenePoint(zone.x, zone.y + zone.h)
+    ];
     ctx.save();
     ctx.shadowColor = 'rgba(31, 42, 68, 0.13)';
-    ctx.shadowBlur = 22;
-    ctx.shadowOffsetY = 12;
-    fillRoundRect(ctx, x, y, w, h, 16, zone.color, 'rgba(103,119,145,0.28)');
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 10;
+    isoPolygon(points, zone.color, 'rgba(103,119,145,0.26)');
     ctx.restore();
 
     ctx.save();
-    ctx.globalAlpha = 0.36;
-    const sheen = ctx.createLinearGradient(x, y, x + w, y + h);
-    sheen.addColorStop(0, 'rgba(255,255,255,0.88)');
-    sheen.addColorStop(0.38, 'rgba(255,255,255,0)');
-    sheen.addColorStop(1, 'rgba(255,255,255,0.32)');
-    fillRoundRect(ctx, x + 1, y + 1, w - 2, h - 2, 15, sheen);
+    ctx.globalAlpha = 0.24;
+    isoPolygon(points, 'rgba(255,255,255,0.65)');
     ctx.restore();
 
-    drawText(zone.label, x + 13, y + 12, { font: '800 12px Inter, Segoe UI, sans-serif', color: '#435269' });
+    const label = scenePoint(zone.x + zone.w * 0.07, zone.y + zone.h * 0.08, 5);
+    drawText(zone.label, label.x, label.y, { font: '800 11px Inter, Segoe UI, sans-serif', color: '#435269' });
   });
 
   drawWalkways();
@@ -510,9 +607,12 @@ function drawAmbientDecor(time) {
   });
   ctx.restore();
 
-  drawPlant(px(0.055), py(0.60), 1.0);
-  drawPlant(px(0.955), py(0.42), 0.9);
-  drawFloorBadge(px(0.50), py(0.56), time);
+  const leftPlant = scenePoint(0.10, 0.66, 4);
+  const rightPlant = scenePoint(0.92, 0.45, 4);
+  drawPlant(leftPlant.x, leftPlant.y, 1.0);
+  drawPlant(rightPlant.x, rightPlant.y, 0.9);
+  const badge = scenePoint(0.53, 0.57, 6);
+  drawFloorBadge(badge.x, badge.y, time);
 }
 
 function drawPlant(x, y, scale) {
@@ -542,9 +642,9 @@ function drawFloorBadge(x, y, time) {
 
 function drawWalkways() {
   ctx.save();
-  ctx.globalAlpha = 0.6;
-  fillRoundRect(ctx, px(0.08), py(0.48), px(0.84), 34, 18, 'rgba(64, 79, 105, 0.08)');
-  fillRoundRect(ctx, px(0.50), py(0.12), 30, py(0.74), 18, 'rgba(64, 79, 105, 0.08)');
+  ctx.globalAlpha = 0.48;
+  isoRect(0.08, 0.45, 0.84, 0.07, 'rgba(64, 79, 105, 0.08)');
+  isoRect(0.47, 0.13, 0.07, 0.74, 'rgba(64, 79, 105, 0.08)');
   ctx.restore();
 
   ctx.save();
@@ -552,9 +652,12 @@ function drawWalkways() {
   ctx.lineWidth = 2;
   ctx.strokeStyle = 'rgba(45, 114, 217, 0.22)';
   [[0.20, 0.49, 0.55, 0.30], [0.55, 0.30, 0.84, 0.30], [0.84, 0.35, 0.84, 0.56], [0.50, 0.53, 0.50, 0.82]].forEach(([x1, y1, x2, y2]) => {
+    const a = scenePoint(x1, y1, 6);
+    const b = scenePoint(x2, y2, 6);
+    const c = scenePoint((x1 + x2) / 2, Math.min(y1, y2) - 0.08, 6);
     ctx.beginPath();
-    ctx.moveTo(px(x1), py(y1));
-    ctx.quadraticCurveTo(px((x1 + x2) / 2), py(Math.min(y1, y2) - 0.08), px(x2), py(y2));
+    ctx.moveTo(a.x, a.y);
+    ctx.quadraticCurveTo(c.x, c.y, b.x, b.y);
     ctx.stroke();
   });
   ctx.restore();
@@ -581,87 +684,101 @@ function drawTaskParticles(time) {
     ctx.globalAlpha = 0.2 + progress * 0.55;
     ctx.fillStyle = particle.lane === 2 ? '#d92d20' : '#2d72d9';
     ctx.beginPath();
-    ctx.arc(px(x), py(y), particle.size, 0, Math.PI * 2);
+    const point = scenePoint(x, y, 8);
+    ctx.arc(point.x, point.y, particle.size, 0, Math.PI * 2);
     ctx.fill();
   });
   ctx.restore();
 }
 
 function drawFurniture() {
-  drawDesk(px(0.14), py(0.27));
-  drawDesk(px(0.31), py(0.28));
-  drawDocuments(px(0.55), py(0.28));
-  drawDocuments(px(0.64), py(0.29), -0.12);
-  drawBoard(px(0.79), py(0.25));
-  drawLounge(px(0.14), py(0.80));
-  drawGame(px(0.45), py(0.82));
-  drawGym(px(0.78), py(0.82));
-  drawDecisionDesk(px(0.78), py(0.55));
+  drawDesk3d(0.13, 0.27);
+  drawDesk3d(0.31, 0.27);
+  drawDocumentTable3d(0.55, 0.28);
+  drawBoard3d(0.82, 0.21);
+  drawLounge3d(0.14, 0.80);
+  drawGame3d(0.45, 0.82);
+  drawGym3d(0.80, 0.82);
+  drawDecisionDesk3d(0.80, 0.55);
 }
 
-function drawDesk(x, y) {
-  fillRoundRect(ctx, x - 54, y + 14, 108, 40, 8, '#354e70');
-  fillRoundRect(ctx, x - 20, y - 4, 40, 28, 6, '#111827');
-  fillRoundRect(ctx, x - 16, y, 32, 20, 4, '#223453');
-  ctx.fillStyle = 'rgba(45,114,217,0.22)';
-  ctx.fillRect(x - 13, y + 4, 26, 3);
+function drawDesk3d(x, y) {
+  isoBox(x - 0.045, y - 0.025, 0.13, 0.075, 24, '#506783', '#334764', '#263951');
+  isoBox(x - 0.010, y - 0.060, 0.050, 0.028, 38, '#202a3d', '#121a29', '#111827');
 }
 
-function drawDocuments(x, y, rotation = 0) {
+function drawDocumentTable3d(x, y) {
+  isoBox(x - 0.060, y - 0.045, 0.17, 0.10, 18, '#d6a56b', '#9d744d', '#806044');
+  drawDocumentCard(scenePoint(x - 0.030, y - 0.010, 28), -0.08);
+  drawDocumentCard(scenePoint(x + 0.045, y + 0.010, 28), 0.12);
+}
+
+function drawDocumentCard(point, rotation) {
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(point.x, point.y);
   ctx.rotate(rotation);
-  fillRoundRect(ctx, -32, -24, 64, 48, 6, '#ffffff', '#d9e2ee');
+  fillRoundRect(ctx, -28, -18, 56, 36, 5, '#ffffff', '#d9e2ee');
   ctx.strokeStyle = '#d6dee9';
-  for (let i = -12; i <= 14; i += 8) {
+  for (let i = -8; i <= 10; i += 7) {
     ctx.beginPath();
-    ctx.moveTo(-22, i);
-    ctx.lineTo(22, i);
+    ctx.moveTo(-18, i);
+    ctx.lineTo(18, i);
     ctx.stroke();
   }
   ctx.restore();
 }
 
-function drawBoard(x, y) {
-  ctx.strokeStyle = '#5bc28c';
-  ctx.lineWidth = 7;
+function drawBoard3d(x, y) {
+  isoBox(x - 0.055, y - 0.025, 0.17, 0.04, 70, '#dff8ea', '#bfe7d1', '#afdcc5');
+  const p = scenePoint(x + 0.02, y - 0.02, 62);
+  ctx.save();
+  ctx.strokeStyle = '#40b981';
+  ctx.lineWidth = 6;
   ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(x - 38, y);
-  ctx.lineTo(x + 55, y);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x - 38, y + 25);
-  ctx.lineTo(x + 30, y + 25);
+  ctx.moveTo(p.x - 38, p.y);
+  ctx.lineTo(p.x + 56, p.y);
+  ctx.moveTo(p.x - 38, p.y + 20);
+  ctx.lineTo(p.x + 28, p.y + 20);
   ctx.stroke();
   ctx.fillStyle = '#11a36a';
   ctx.beginPath();
-  ctx.arc(x + 70, y + 50, 18, 0, Math.PI * 2);
+  ctx.arc(p.x + 70, p.y + 36, 16, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
 }
 
-function drawLounge(x, y) {
-  fillRoundRect(ctx, x - 70, y - 26, 142, 48, 18, '#7657ef');
-  fillRoundRect(ctx, x + 78, y - 10, 64, 24, 14, '#a36a3c');
+function drawLounge3d(x, y) {
+  isoBox(x - 0.060, y - 0.035, 0.17, 0.08, 22, '#7d5df5', '#5d43c9', '#4c38a9');
+  isoBox(x + 0.090, y + 0.015, 0.075, 0.035, 16, '#b67845', '#8f5b35', '#774829');
 }
 
-function drawGame(x, y) {
-  fillRoundRect(ctx, x - 52, y - 42, 104, 58, 8, '#17213a');
-  const glow = ctx.createLinearGradient(x - 42, y - 34, x + 42, y + 8);
-  glow.addColorStop(0, '#263b78');
+function drawGame3d(x, y) {
+  isoBox(x - 0.065, y - 0.040, 0.14, 0.075, 28, '#1f2b48', '#111827', '#0c1322');
+  const p = scenePoint(x - 0.005, y - 0.020, 40);
+  const glow = ctx.createLinearGradient(p.x - 38, p.y - 18, p.x + 38, p.y + 18);
+  glow.addColorStop(0, '#2d4d9f');
   glow.addColorStop(1, '#101827');
-  fillRoundRect(ctx, x - 45, y - 35, 90, 44, 6, glow);
-  fillRoundRect(ctx, x + 58, y - 10, 54, 24, 14, '#344054');
+  fillRoundRect(ctx, p.x - 38, p.y - 20, 76, 38, 8, glow, '#101827');
+  isoBox(x + 0.095, y + 0.035, 0.070, 0.030, 14, '#43516b', '#303b50', '#283247');
 }
 
-function drawGym(x, y) {
-  fillRoundRect(ctx, x - 66, y - 24, 120, 42, 22, '#f76b6b');
-  fillRoundRect(ctx, x + 34, y - 8, 72, 14, 8, '#344054');
+function drawGym3d(x, y) {
+  isoBox(x - 0.065, y - 0.020, 0.15, 0.045, 15, '#ff7474', '#d95f5f', '#ba4d4d');
+  const p = scenePoint(x + 0.075, y + 0.015, 24);
+  ctx.strokeStyle = '#344054';
+  ctx.lineWidth = 9;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(p.x - 30, p.y);
+  ctx.lineTo(p.x + 36, p.y);
+  ctx.stroke();
 }
 
-function drawDecisionDesk(x, y) {
-  fillRoundRect(ctx, x - 50, y - 22, 92, 52, 8, '#d92d20');
-  drawText('?', x + 78, y - 26, { font: '900 46px Inter, Segoe UI, sans-serif', color: '#d92d20' });
+function drawDecisionDesk3d(x, y) {
+  isoBox(x - 0.055, y - 0.035, 0.12, 0.075, 28, '#e32f22', '#b9261d', '#991f18');
+  const p = scenePoint(x + 0.13, y - 0.005, 42);
+  drawText('?', p.x, p.y, { font: '900 44px Inter, Segoe UI, sans-serif', color: '#d92d20', align: 'center', baseline: 'middle' });
 }
 
 function updateAgents(delta, time) {
@@ -690,82 +807,137 @@ function updateAgents(delta, time) {
 
 function drawAgents(time) {
   [...agents].sort((a, b) => a.y - b.y).forEach(agent => {
-    drawAgent(agent, px(agent.x), py(agent.y), time);
+    const point = scenePoint(agent.x, agent.y, 22);
+    drawAgent(agent, point.x, point.y, time);
   });
 }
 
 function drawAgent(agent, x, y, time) {
   const [primary, accent] = rolePalette[agent.role] || rolePalette.analysis;
-  const scale = Math.max(0.72, Math.min(1.06, renderSize.width / 1100));
-  const walk = agent.moving ? Math.sin(time / 100 + agent.phase) : 0;
-  const bob = agent.moving ? Math.sin(time / 120 + agent.phase) * 2.2 : Math.sin(time / 850 + agent.phase) * 0.8;
+  const scale = Math.max(0.74, Math.min(1.08, renderSize.width / 1180)) * (0.86 + agent.y * 0.26);
+  const walk = agent.moving ? Math.sin(time / 96 + agent.phase) : 0;
+  const bob = agent.moving ? Math.sin(time / 115 + agent.phase) * 2.5 : Math.sin(time / 850 + agent.phase) * 1.0;
+  const blink = Math.sin(time / 1700 + agent.phase) > 0.96;
 
   ctx.save();
   ctx.translate(x, y + bob);
   ctx.scale(scale * agent.facing, scale);
 
-  ctx.fillStyle = 'rgba(24, 35, 52, 0.20)';
+  ctx.fillStyle = 'rgba(24, 35, 52, 0.24)';
   ctx.beginPath();
-  ctx.ellipse(0, 38, 30, 9, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 42, 34, 11, 0, 0, Math.PI * 2);
   ctx.fill();
 
   drawAgentProp(agent, primary, accent, time);
 
+  const body = ctx.createLinearGradient(0, -16, 0, 42);
+  body.addColorStop(0, accent);
+  body.addColorStop(1, primary);
   ctx.strokeStyle = '#1d2738';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
-  ctx.fillStyle = '#ffd1a3';
 
-  drawLimb(-12, 2, -23 + walk * 5, 23, '#ffd1a3');
-  drawLimb(12, 2, 23 - walk * 5, 23, '#ffd1a3');
+  drawSoftLimb(-17, 5, -29 + walk * 5, 26, accent);
+  drawSoftLimb(17, 5, 29 - walk * 5, 26, accent);
+  drawSoftLimb(-9, 35, -18 - walk * 7, 55, primary);
+  drawSoftLimb(9, 35, 18 + walk * 7, 55, primary);
 
-  drawLimb(-8, 27, -15 - walk * 7, 50, '#2a3954');
-  drawLimb(8, 27, 15 + walk * 7, 50, '#2a3954');
-
-  const body = ctx.createLinearGradient(0, -2, 0, 32);
-  body.addColorStop(0, accent);
-  body.addColorStop(1, primary);
-  fillRoundRect(ctx, -18, -6, 36, 42, 12, body, '#1d2738');
-
-  ctx.fillStyle = '#ffd1a3';
+  fillRoundRect(ctx, -24, -8, 48, 54, 22, body, '#1d2738');
+  ctx.fillStyle = 'rgba(255,255,255,0.24)';
   ctx.beginPath();
-  ctx.arc(0, -28, 18, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#26344d';
-  ctx.beginPath();
-  ctx.ellipse(0, -39, 18, 10, -0.1, 0, Math.PI * 2);
+  ctx.ellipse(-9, 6, 8, 20, -0.28, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = 'rgba(29,39,56,0.75)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(-7, -25);
-  ctx.lineTo(7, -25);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(0, -19, 6, 0.12, Math.PI - 0.12);
-  ctx.stroke();
+  drawCuteHead(primary, accent, blink, time + agent.phase * 100);
 
   ctx.restore();
 
-  drawAgentLabel(agent, x, y - 52 * scale);
+  drawAgentLabel(agent, x, y - 66 * scale);
 }
 
-function drawLimb(x1, y1, x2, y2, fill) {
+function drawSoftLimb(x1, y1, x2, y2, fill) {
   ctx.strokeStyle = '#1d2738';
-  ctx.lineWidth = 9;
+  ctx.lineWidth = 11;
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.stroke();
   ctx.strokeStyle = fill;
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 7;
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.stroke();
+}
+
+function drawCuteHead(primary, accent, blink, time) {
+  ctx.save();
+  ctx.translate(0, -33);
+
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(-17, -17, 11, 0, Math.PI * 2);
+  ctx.arc(17, -17, 11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#1d2738';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  const head = ctx.createLinearGradient(0, -35, 0, 12);
+  head.addColorStop(0, '#fff8ed');
+  head.addColorStop(1, '#ffd1a3');
+  ctx.fillStyle = head;
+  ctx.beginPath();
+  ctx.ellipse(0, -4, 24, 27, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = primary;
+  ctx.beginPath();
+  ctx.ellipse(0, -24, 23, 13, 0.02, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(-8, -7, 6, 7, 0, 0, Math.PI * 2);
+  ctx.ellipse(8, -7, 6, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#172033';
+  if (blink) {
+    ctx.strokeStyle = '#172033';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-13, -7);
+    ctx.lineTo(-4, -7);
+    ctx.moveTo(4, -7);
+    ctx.lineTo(13, -7);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(-8, -7, 2.8, 0, Math.PI * 2);
+    ctx.arc(8, -7, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-9, -9, 1.1, 0, Math.PI * 2);
+    ctx.arc(7, -9, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.strokeStyle = '#8a4d35';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 2, 6, 0.2, Math.PI - 0.2);
+  ctx.stroke();
+
+  ctx.fillStyle = `rgba(255, 128, 148, ${0.22 + Math.sin(time / 700) * 0.06})`;
+  ctx.beginPath();
+  ctx.arc(-16, 0, 5, 0, Math.PI * 2);
+  ctx.arc(16, 0, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
 }
 
 function drawAgentProp(agent, primary, accent, time) {
