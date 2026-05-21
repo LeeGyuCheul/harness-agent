@@ -1,10 +1,10 @@
 :root {
-  color-scheme: light;
-  --bg: #eef3f8;
-  --ink: #152033;
-  --muted: #667085;
-  --line: #d7dfeb;
-  --panel: rgba(255, 255, 255, 0.9);
+  color-scheme: dark;
+  --bg: #060b18;
+  --ink: #eaf2ff;
+  --muted: #8ea4c5;
+  --line: rgba(120, 162, 255, 0.24);
+  --panel: rgba(8, 15, 32, 0.78);
   --todo: #8a94a6;
   --active: #1f7ae0;
   --done: #11a36a;
@@ -19,9 +19,10 @@ body {
   min-height: 100vh;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 12% 4%, rgba(45, 114, 217, 0.14), transparent 26%),
-    radial-gradient(circle at 86% 10%, rgba(15, 159, 122, 0.12), transparent 25%),
-    linear-gradient(180deg, #f9fbfe 0%, var(--bg) 100%);
+    radial-gradient(circle at 18% 0%, rgba(28, 117, 255, 0.36), transparent 30%),
+    radial-gradient(circle at 82% 8%, rgba(0, 229, 255, 0.26), transparent 28%),
+    radial-gradient(circle at 52% 92%, rgba(165, 80, 255, 0.20), transparent 34%),
+    linear-gradient(180deg, #0b1022 0%, var(--bg) 100%);
   color: var(--ink);
 }
 
@@ -32,8 +33,8 @@ body {
   gap: 24px;
   padding: 24px 32px 16px;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(12px);
+  background: rgba(8, 14, 30, 0.82);
+  backdrop-filter: blur(18px);
 }
 
 .eyebrow {
@@ -57,7 +58,7 @@ h1 { font-size: 30px; line-height: 1.1; }
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: linear-gradient(180deg, #ffffff, #f4f7fb);
+  background: linear-gradient(180deg, rgba(45, 72, 122, 0.74), rgba(13, 24, 48, 0.82));
   font-size: 13px;
   font-weight: 800;
 }
@@ -73,7 +74,7 @@ h1 { font-size: 30px; line-height: 1.1; }
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--panel);
-  box-shadow: 0 18px 45px rgba(16, 24, 40, 0.10);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .world-toolbar {
@@ -93,9 +94,10 @@ h1 { font-size: 30px; line-height: 1.1; }
   min-height: calc(100vh - 178px);
   margin: 14px;
   overflow: hidden;
-  border: 1px solid #cbd7e6;
+  border: 1px solid rgba(88, 152, 255, 0.28);
   border-radius: 14px;
-  background: #f8fbff;
+  background: #060b18;
+  box-shadow: inset 0 0 80px rgba(64, 119, 255, 0.16);
 }
 
 #world-canvas {
@@ -125,15 +127,16 @@ button, .file-button {
   justify-content: center;
   min-height: 36px;
   padding: 8px 11px;
-  border: 1px solid #b8c4d5;
+  border: 1px solid rgba(120, 162, 255, 0.36);
   border-radius: 7px;
-  background: #fff;
+  background: rgba(13, 24, 48, 0.88);
   color: var(--ink);
   font-weight: 900;
   cursor: pointer;
 }
 
 button:hover, .file-button:hover { background: #eef4ff; }
+button:hover, .file-button:hover { background: rgba(31, 64, 122, 0.92); }
 .file-button input { display: none; }
 #shuffle-agents { white-space: nowrap; }
 #load-sample { margin-left: 8px; }
@@ -143,8 +146,10 @@ button:hover, .file-button:hover { background: #eef4ff; }
   width: 100%;
   min-height: 38px;
   padding: 8px 10px;
-  border: 1px solid #b8c4d5;
+  border: 1px solid rgba(120, 162, 255, 0.36);
   border-radius: 7px;
+  background: rgba(5, 10, 22, 0.78);
+  color: var(--ink);
   font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -173,6 +178,8 @@ textarea {
   padding: 10px;
   border: 1px solid #b8c4d5;
   border-radius: 7px;
+  background: rgba(5, 10, 22, 0.78);
+  color: var(--ink);
   font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -203,7 +210,7 @@ textarea {
   padding: 9px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #f8fafc;
+  background: rgba(10, 19, 40, 0.74);
 }
 .activity-item strong { color: var(--ink); font-size: 13px; }
 .activity-item span { font-size: 12px; }
