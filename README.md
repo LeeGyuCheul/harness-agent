@@ -56,6 +56,10 @@ scripts/
 
 The common harness stays generic. Local project rules stay local.
 
+## Publication Rule
+
+Do not commit or push every intermediate edit. Keep work local while the user is still reviewing or requesting changes. Publish to GitHub only when the user explicitly asks for final reflection, sync, push, or publication.
+
 ## Operational Additions
 
 This kit also includes:

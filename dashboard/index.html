@@ -35,14 +35,14 @@
 
     <aside class="control-panel" aria-label="Queue controls">
       <div class="panel-section">
-        <h2>Live Queue URL</h2>
-        <label for="queue-url">Remote session-queue.md URL</label>
-        <input id="queue-url" class="url-input" type="url" placeholder="https://.../session-queue.md">
+        <h2>GitHub Queue Sync</h2>
+        <label for="queue-url">Queue source</label>
+        <input id="queue-url" class="url-input" type="url" placeholder="Auto: examples/sample-session-queue.md">
         <div class="sync-row">
           <button id="start-sync" type="button">Start Sync</button>
           <button id="stop-sync" type="button">Stop</button>
         </div>
-        <p id="sync-status" class="sync-status">Not syncing</p>
+        <p id="sync-status" class="sync-status">Ready to sync default GitHub queue</p>
       </div>
 
       <div class="panel-section">

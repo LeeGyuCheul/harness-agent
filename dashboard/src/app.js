@@ -16,6 +16,8 @@ const roleFallback = [
   { id: 'TASK-DC-001', role: 'docs', status: 'todo', scope: 'Documentation', goal: 'Maintain handoff and records' }
 ];
 
+const defaultQueueUrl = '../examples/sample-session-queue.md';
+
 const rolePalette = {
   main: ['#2d72d9', '#93c5fd'],
   analysis: ['#7c4dff', '#c4b5fd'],
@@ -71,25 +73,39 @@ const actionCopy = {
 };
 
 const zones = {
-  work: { label: 'OPS PODS', x: 0.05, y: 0.08, w: 0.38, h: 0.30, color: 'rgba(22, 48, 91, 0.78)', trim: '#4da3ff' },
-  docs: { label: 'DATA BAR', x: 0.48, y: 0.08, w: 0.22, h: 0.28, color: 'rgba(86, 58, 21, 0.74)', trim: '#ffbd59' },
-  review: { label: 'REVIEW WALL', x: 0.74, y: 0.08, w: 0.21, h: 0.29, color: 'rgba(24, 82, 62, 0.74)', trim: '#39ffb6' },
-  lounge: { label: 'SOCIAL DECK', x: 0.06, y: 0.70, w: 0.26, h: 0.23, color: 'rgba(61, 37, 98, 0.76)', trim: '#b177ff' },
-  game: { label: 'MEDIA BAY', x: 0.36, y: 0.72, w: 0.25, h: 0.21, color: 'rgba(21, 40, 83, 0.78)', trim: '#5d8cff' },
-  gym: { label: 'WELLNESS BAY', x: 0.72, y: 0.70, w: 0.23, h: 0.23, color: 'rgba(92, 48, 28, 0.74)', trim: '#ff8b4a' },
-  blocked: { label: 'ESCALATION HUB', x: 0.72, y: 0.46, w: 0.22, h: 0.18, color: 'rgba(88, 24, 38, 0.76)', trim: '#ff4d6d' },
+  work: { label: 'Office', detail: 'Build room', icon: 'PC', x: 0.05, y: 0.08, w: 0.38, h: 0.30, color: 'rgba(22, 48, 91, 0.78)', trim: '#4da3ff' },
+  docs: { label: 'Reading Lab', detail: 'Context desk', icon: 'DOC', x: 0.48, y: 0.08, w: 0.22, h: 0.28, color: 'rgba(86, 58, 21, 0.74)', trim: '#ffbd59' },
+  review: { label: 'Test Room', detail: 'Review wall', icon: 'OK', x: 0.74, y: 0.08, w: 0.21, h: 0.29, color: 'rgba(24, 82, 62, 0.74)', trim: '#39ffb6' },
+  lounge: { label: 'Lounge', detail: 'Coffee break', icon: 'ZZ', x: 0.06, y: 0.70, w: 0.26, h: 0.23, color: 'rgba(61, 37, 98, 0.76)', trim: '#b177ff' },
+  game: { label: 'Game Bay', detail: 'Arcade rest', icon: 'PAD', x: 0.36, y: 0.72, w: 0.25, h: 0.21, color: 'rgba(21, 40, 83, 0.78)', trim: '#5d8cff' },
+  gym: { label: 'Gym', detail: 'Reset zone', icon: 'FIT', x: 0.72, y: 0.70, w: 0.23, h: 0.23, color: 'rgba(92, 48, 28, 0.74)', trim: '#ff8b4a' },
+  blocked: { label: 'Decision Room', detail: 'Blocked queue', icon: '!', x: 0.72, y: 0.46, w: 0.22, h: 0.18, color: 'rgba(88, 24, 38, 0.76)', trim: '#ff4d6d' },
   away: { label: 'AWAY', x: 0.02, y: 0.44, w: 0.10, h: 0.12, color: '#eef2f7' }
 };
 
 const zoneTargets = {
-  work: [[0.17, 0.26], [0.32, 0.27], [0.25, 0.34]],
-  docs: [[0.55, 0.27], [0.64, 0.28], [0.58, 0.34]],
-  review: [[0.80, 0.28], [0.88, 0.30], [0.84, 0.36]],
+  work: [[0.19, 0.25], [0.31, 0.27], [0.25, 0.33]],
+  docs: [[0.55, 0.27], [0.63, 0.29], [0.58, 0.34]],
+  review: [[0.80, 0.28], [0.88, 0.30], [0.84, 0.35]],
   lounge: [[0.15, 0.78], [0.24, 0.82], [0.19, 0.72]],
   game: [[0.43, 0.80], [0.53, 0.82], [0.49, 0.75]],
   gym: [[0.77, 0.82], [0.88, 0.81], [0.82, 0.75]],
   blocked: [[0.78, 0.55], [0.87, 0.56], [0.83, 0.62]],
   away: [[0.07, 0.50], [0.93, 0.49], [0.50, 0.94]]
+};
+
+const roleWorkstations = {
+  main: { zone: 'review', point: [0.82, 0.31] },
+  analysis: { zone: 'docs', point: [0.58, 0.30] },
+  worker: { zone: 'work', point: [0.24, 0.30] },
+  verify: { zone: 'review', point: [0.88, 0.34] },
+  docs: { zone: 'docs', point: [0.64, 0.32] }
+};
+
+const statusWorkstations = {
+  blocked: { zone: 'blocked', point: [0.82, 0.56] },
+  done: { zone: 'review', point: [0.90, 0.32] },
+  skipped: { zone: 'away', point: [0.93, 0.49] }
 };
 
 const roleTargetZone = {
@@ -185,18 +201,30 @@ function pick(list) {
 }
 
 function targetZoneFor(item) {
-  if (item.status === 'blocked') return 'blocked';
-  if (item.status === 'skipped') return 'away';
-  if (item.status === 'done') return 'review';
+  if (statusWorkstations[item.status]) return statusWorkstations[item.status].zone;
   if (item.status === 'todo') return pick(idleZones);
-  return roleTargetZone[item.role] || 'work';
+  return roleWorkstations[item.role]?.zone || roleTargetZone[item.role] || 'work';
 }
 
-function pointForZone(zoneName) {
+function workstationFor(item) {
+  if (statusWorkstations[item.status]) {
+    const config = statusWorkstations[item.status];
+    return { zone: config.zone, x: config.point[0], y: config.point[1], anchored: item.status !== 'skipped' };
+  }
+  if (item.status === 'in-progress') {
+    const config = roleWorkstations[item.role] || roleWorkstations.worker;
+    return { zone: config.zone, x: config.point[0], y: config.point[1], anchored: true };
+  }
+  const zone = targetZoneFor(item);
+  const target = pointForZone(zone, false);
+  return { zone, x: target.x, y: target.y, anchored: false };
+}
+
+function pointForZone(zoneName, jitter = true) {
   const [x, y] = pick(zoneTargets[zoneName] || zoneTargets.lounge);
   return {
-    x: x + (Math.random() * 0.035 - 0.0175),
-    y: y + (Math.random() * 0.035 - 0.0175)
+    x: jitter ? x + (Math.random() * 0.035 - 0.0175) : x,
+    y: jitter ? y + (Math.random() * 0.035 - 0.0175) : y
   };
 }
 
@@ -211,21 +239,21 @@ function activityFor(item, zone) {
 
 function buildAgents(items) {
   agents = items.map((item, index) => {
-    const zone = targetZoneFor(item);
+    const station = workstationFor(item);
     const start = pointForZone(pick(['lounge', 'game', 'work', 'docs', 'review']));
-    const target = pointForZone(zone);
     return {
       ...item,
       x: start.x,
       y: start.y,
-      targetX: target.x,
-      targetY: target.y,
-      zone,
+      targetX: station.x,
+      targetY: station.y,
+      zone: station.zone,
+      anchored: station.anchored,
       speed: 0.105 + index * 0.012 + Math.random() * 0.025,
       pauseUntil: 0,
       phase: Math.random() * Math.PI * 2,
       facing: 1,
-      activity: activityFor(item, zone)
+      activity: activityFor(item, station.zone)
     };
   });
   updateSummaries(items);
@@ -250,13 +278,19 @@ function updateActivityList() {
 }
 
 function assignNewTarget(agent, forceIdleSwitch = false) {
-  let zone = targetZoneFor(agent);
-  if (agent.status === 'todo' && forceIdleSwitch) zone = pick(idleZones);
-  agent.zone = zone;
-  const target = pointForZone(zone);
-  agent.targetX = target.x;
-  agent.targetY = target.y;
-  agent.activity = activityFor(agent, zone);
+  let station;
+  if (agent.status === 'todo' && forceIdleSwitch) {
+    const zone = pick(idleZones);
+    const target = pointForZone(zone);
+    station = { zone, x: target.x, y: target.y, anchored: false };
+  } else {
+    station = workstationFor(agent);
+  }
+  agent.zone = station.zone;
+  agent.anchored = station.anchored;
+  agent.targetX = station.x;
+  agent.targetY = station.y;
+  agent.activity = activityFor(agent, station.zone);
 }
 
 function shuffleAgents() {
@@ -297,11 +331,7 @@ function renderFromText() {
 }
 
 async function fetchQueueOnce() {
-  const url = queueUrlInput.value.trim();
-  if (!url) {
-    setSyncStatus('Enter a remote queue URL first', 'blocked');
-    return;
-  }
+  const url = queueUrlInput.value.trim() || defaultQueueUrl;
 
   try {
     const separator = url.includes('?') ? '&' : '?';
@@ -327,6 +357,7 @@ async function fetchQueueOnce() {
 
 function startSync() {
   if (syncTimer) clearInterval(syncTimer);
+  if (!queueUrlInput.value.trim()) queueUrlInput.placeholder = `Auto: ${defaultQueueUrl}`;
   setSyncStatus('Sync starting...', 'active');
   fetchQueueOnce();
   syncTimer = setInterval(fetchQueueOnce, syncIntervalMs);
@@ -513,6 +544,63 @@ function drawAssetScene(time) {
   ctx.save();
   ctx.globalAlpha = 0.58;
   drawTaskParticles(time);
+  ctx.restore();
+
+  drawZoneBadges(time);
+}
+
+function drawZoneBadges(time) {
+  const badgePositions = {
+    work: [0.23, 0.18],
+    docs: [0.58, 0.18],
+    review: [0.84, 0.18],
+    lounge: [0.18, 0.76],
+    game: [0.47, 0.78],
+    gym: [0.81, 0.78],
+    blocked: [0.83, 0.52]
+  };
+
+  Object.entries(badgePositions).forEach(([key, point], index) => {
+    const zone = zones[key];
+    const pos = scenePoint(point[0], point[1], 58);
+    drawZoneBadge(zone, pos.x, pos.y + Math.sin(time / 900 + index) * 1.5);
+  });
+}
+
+function drawZoneBadge(zone, x, y) {
+  const title = zone.label;
+  const detail = zone.detail || '';
+  ctx.save();
+  ctx.font = '900 12px Inter, Segoe UI, sans-serif';
+  const titleWidth = ctx.measureText(title).width;
+  ctx.font = '700 10px Inter, Segoe UI, sans-serif';
+  const detailWidth = ctx.measureText(detail).width;
+  const width = Math.max(96, titleWidth + 52, detailWidth + 42);
+  const height = detail ? 44 : 32;
+
+  ctx.shadowColor = zone.trim || 'rgba(0,229,255,0.35)';
+  ctx.shadowBlur = 16;
+  fillRoundRect(ctx, x - width / 2, y - height / 2, width, height, 12, 'rgba(5, 12, 26, 0.78)', zone.trim || 'rgba(0,229,255,0.4)');
+
+  fillRoundRect(ctx, x - width / 2 + 8, y - 12, 28, 24, 8, 'rgba(255,255,255,0.08)', zone.trim || 'rgba(0,229,255,0.35)');
+  drawText(zone.icon || '', x - width / 2 + 22, y, {
+    font: '900 9px Inter, Segoe UI, sans-serif',
+    color: zone.trim || '#9ad7ff',
+    align: 'center',
+    baseline: 'middle'
+  });
+  drawText(title, x - width / 2 + 44, y - (detail ? 12 : 6), {
+    font: '900 12px Inter, Segoe UI, sans-serif',
+    color: '#f8fbff',
+    baseline: 'middle'
+  });
+  if (detail) {
+    drawText(detail, x - width / 2 + 44, y + 8, {
+      font: '700 10px Inter, Segoe UI, sans-serif',
+      color: '#9fb4d3',
+      baseline: 'middle'
+    });
+  }
   ctx.restore();
 }
 
@@ -972,10 +1060,12 @@ function updateAgents(delta, time) {
       agent.y += (dy / distance) * step;
       agent.facing = dx < -0.001 ? -1 : 1;
     } else if (time > agent.pauseUntil) {
-      agent.pauseUntil = time + 900 + Math.random() * 1800;
-      if (agent.status === 'todo' || agent.status === 'in-progress') {
+      agent.x = agent.targetX;
+      agent.y = agent.targetY;
+      agent.pauseUntil = time + (agent.anchored ? 2800 : 900) + Math.random() * (agent.anchored ? 2400 : 1800);
+      if (!agent.anchored && agent.status === 'todo') {
         setTimeout(() => {
-          assignNewTarget(agent, agent.status === 'todo');
+          assignNewTarget(agent, true);
           updateActivityList();
         }, agent.pauseUntil - time);
       }
@@ -1223,6 +1313,11 @@ function drawSweatDrop(x, y, time) {
 }
 
 function drawAgentProp(agent, primary, accent, time) {
+  if (agent.anchored && agent.status === 'in-progress') {
+    drawWorkingRig(agent, primary, accent, time);
+    return;
+  }
+
   if (agent.status === 'todo') {
     if (agent.zone === 'game') {
       fillRoundRect(ctx, -26, 24, 52, 18, 8, '#344054', '#1d2738');
@@ -1285,6 +1380,55 @@ function drawAgentProp(agent, primary, accent, time) {
   fillRoundRect(ctx, -26, 18, 52, 26, 6, '#1f293d', '#1d2738');
   ctx.fillStyle = `rgba(93, 173, 255, ${glow})`;
   ctx.fillRect(-18, 24, 36, 4);
+}
+
+function drawWorkingRig(agent, primary, accent, time) {
+  const pulse = 0.35 + Math.sin(time / 240 + agent.phase) * 0.18;
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  if (agent.role === 'worker') {
+    fillRoundRect(ctx, -30, 24, 60, 24, 6, '#0a1428', 'rgba(0,229,255,0.42)');
+    ctx.fillStyle = `rgba(0, 229, 255, ${pulse})`;
+    for (let i = -20; i <= 16; i += 12) ctx.fillRect(i, 31, 7, 3);
+  } else if (agent.role === 'analysis') {
+    fillRoundRect(ctx, -30, 22, 60, 30, 8, 'rgba(20,16,48,0.92)', 'rgba(177,119,255,0.42)');
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-20, 42);
+    ctx.lineTo(-8, 32 + Math.sin(time / 220) * 4);
+    ctx.lineTo(4, 38);
+    ctx.lineTo(18, 28);
+    ctx.stroke();
+  } else if (agent.role === 'verify') {
+    fillRoundRect(ctx, -24, 22, 48, 30, 8, 'rgba(35,18,12,0.94)', 'rgba(255,139,74,0.42)');
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-12, 37);
+    ctx.lineTo(-4, 45);
+    ctx.lineTo(14, 27);
+    ctx.stroke();
+  } else if (agent.role === 'docs') {
+    fillRoundRect(ctx, -26, 22, 52, 30, 6, '#f8fafc', 'rgba(240,90,157,0.42)');
+    ctx.strokeStyle = '#94a3b8';
+    for (let y = 30; y <= 44; y += 6) {
+      ctx.beginPath();
+      ctx.moveTo(-16, y);
+      ctx.lineTo(16, y);
+      ctx.stroke();
+    }
+  } else {
+    fillRoundRect(ctx, -31, 22, 62, 32, 9, 'rgba(5,15,32,0.94)', 'rgba(77,163,255,0.48)');
+    ctx.strokeStyle = primary;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 38, 14 + Math.sin(time / 260) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = `rgba(77, 163, 255, ${pulse})`;
+    ctx.fillRect(-18, 37, 36, 3);
+  }
+  ctx.restore();
 }
 
 function drawAgentLabel(agent, x, y) {
