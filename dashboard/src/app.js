@@ -116,6 +116,7 @@ const stopSyncButton = document.querySelector('#stop-sync');
 const syncStatus = document.querySelector('#sync-status');
 const summaryCount = document.querySelector('#summary-count');
 const summaryActive = document.querySelector('#summary-active');
+const summarySync = document.querySelector('#summary-sync');
 const activityList = document.querySelector('#activity-list');
 
 let agents = [];
@@ -235,7 +236,7 @@ function updateSummaries(items) {
   const active = items.filter(item => item.status === 'in-progress').length;
   const blocked = items.filter(item => item.status === 'blocked').length;
   summaryCount.textContent = `${items.length} agents`;
-  summaryActive.textContent = blocked ? `${active} active · ${blocked} blocked` : `${active} active`;
+  summaryActive.textContent = blocked ? `${active} working · ${blocked} blocked` : `${active} working`;
 }
 
 function updateActivityList() {
@@ -278,6 +279,16 @@ function hashText(value) {
 function setSyncStatus(message, state = 'idle') {
   syncStatus.textContent = message;
   syncStatus.dataset.state = state;
+  if (summarySync) {
+    const summaryText = {
+      idle: 'sync off',
+      active: 'syncing',
+      ok: 'synced',
+      blocked: 'sync error'
+    };
+    summarySync.textContent = summaryText[state] || 'sync off';
+    summarySync.dataset.state = state;
+  }
 }
 
 function renderFromText() {
