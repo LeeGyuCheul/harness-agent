@@ -95,7 +95,7 @@ The dashboard can:
 - Render the built-in sample queue
 - Load a `session-queue.md` file from disk
 - Accept pasted queue markdown
-- Render a Canvas-based metaverse-style operations floor with original agent avatars
+- Render a generated metaverse operations-room background with overlaid agent avatars
 - Move agents between workspace zones by status: `todo`, `in-progress`, `done`, `blocked`, `skipped`
 
 It is fully static and does not send data to a server.

@@ -104,6 +104,7 @@ const idleZones = ['lounge', 'game', 'gym'];
 
 const canvas = document.querySelector('#world-canvas');
 const ctx = canvas.getContext('2d');
+const backgroundImage = new Image();
 const queueText = document.querySelector('#queue-text');
 const renderButton = document.querySelector('#render-queue');
 const sampleButton = document.querySelector('#load-sample');
@@ -122,6 +123,7 @@ let lastTime = performance.now();
 let syncTimer = null;
 let lastQueueHash = '';
 let renderSize = { width: 1200, height: 760, ratio: 1 };
+let backgroundReady = false;
 const syncIntervalMs = 5000;
 const flowParticles = Array.from({ length: 22 }, (_, index) => ({
   lane: index % 4,
@@ -129,6 +131,11 @@ const flowParticles = Array.from({ length: 22 }, (_, index) => ({
   speed: 0.00004 + Math.random() * 0.000035,
   size: 2 + Math.random() * 2.5
 }));
+
+backgroundImage.onload = () => {
+  backgroundReady = true;
+};
+backgroundImage.src = 'assets/background/metaverse-ops-room.png';
 
 function normalizeStatus(value) {
   const status = String(value || '').trim().toLowerCase();
@@ -478,6 +485,45 @@ function drawWorldBackground(time) {
   ctx.restore();
 
   drawAmbientDecor(time);
+}
+
+function drawAssetScene(time) {
+  const { width, height } = renderSize;
+  ctx.clearRect(0, 0, width, height);
+  drawCoverImage(backgroundImage, 0, 0, width, height);
+
+  const vignette = ctx.createRadialGradient(width * 0.48, height * 0.42, width * 0.12, width * 0.50, height * 0.52, width * 0.78);
+  vignette.addColorStop(0, 'rgba(255,255,255,0.03)');
+  vignette.addColorStop(0.64, 'rgba(4,10,22,0.00)');
+  vignette.addColorStop(1, 'rgba(2,6,14,0.46)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.globalAlpha = 0.58;
+  drawTaskParticles(time);
+  ctx.restore();
+}
+
+function drawCoverImage(image, x, y, w, h) {
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const boxRatio = w / h;
+  let drawW;
+  let drawH;
+  let drawX = x;
+  let drawY = y;
+
+  if (imageRatio > boxRatio) {
+    drawW = w;
+    drawH = w / imageRatio;
+    drawY = y - (drawH - h) / 2;
+  } else {
+    drawH = h;
+    drawW = h * imageRatio;
+    drawX = x - (drawW - w) / 2;
+  }
+
+  ctx.drawImage(image, drawX, drawY, drawW, drawH);
 }
 
 function drawIsometricRoom(time) {
@@ -1241,8 +1287,12 @@ function drawAgentLabel(agent, x, y) {
 }
 
 function drawFrame(time) {
-  drawWorldBackground(time);
-  drawZones();
+  if (backgroundReady) {
+    drawAssetScene(time);
+  } else {
+    drawWorldBackground(time);
+    drawZones();
+  }
   drawAgents(time);
 }
 
