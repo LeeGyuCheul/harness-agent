@@ -157,6 +157,37 @@ Rules:
 
 For any task that requires direct edits, use local Claude Code or Codex in the same workspace instead of Claude.ai web/app.
 
+## Automated Claude Code Bridge
+
+When Claude Code CLI is installed and authenticated on the same machine, the PM runtime may invoke Claude Code directly instead of asking the user to copy and paste a prompt.
+
+Use:
+
+```powershell
+.\scripts\run-claude-queue-item.ps1 `
+  -WorkspaceRoot "<WORKSPACE_ROOT>" `
+  -HarnessRoot "<HARNESS_ROOT>" `
+  -ProjectProfile "<PROJECT_PROFILE>" `
+  -TaskRoot "<TASK_ROOT>/<task-name>" `
+  -Role "<analysis | worker | verify | docs>" `
+  -QueueId "<QUEUE-ID>" `
+  -Goal "<specific task goal>" `
+  -PermissionMode "auto"
+```
+
+The script builds the required single instruction block, runs `claude -p --output-format json`, and writes the result JSON into the task folder.
+
+Use the bridge only when:
+
+- `claude auth status` reports logged in.
+- Claude Code can access the same workspace path.
+- The PM assigned a single queue item.
+- The task has clear ownership boundaries.
+
+Use `-PermissionMode "auto"` for routine queue work. Use stricter modes such as `plan` for analysis-only work. Do not use `bypassPermissions` unless the workspace is isolated and the PM explicitly accepts the risk.
+
+If the bridge cannot connect to the Claude API from a restricted runtime, rerun it from an approved local shell or use the manual copy/paste bridge.
+
 Use this format:
 
 ```text

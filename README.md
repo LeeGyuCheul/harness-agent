@@ -113,6 +113,20 @@ Validate task structure:
 .\scripts\harness-validate.ps1 -TaskRoot ".\tmp\sample-task" -Strict
 ```
 
+Run a Claude Code queue item from the PM session:
+
+```powershell
+.\scripts\run-claude-queue-item.ps1 `
+  -WorkspaceRoot "C:\project\trade\harness-agent-work" `
+  -HarnessRoot "C:\project\trade\harness-agent-work" `
+  -ProjectProfile "C:\project\trade\harness-agent-work\examples\sample-project-profile.md" `
+  -TaskRoot "C:\project\trade\harness-agent-work\examples" `
+  -Role "verify" `
+  -QueueId "SAMPLE-VF-001" `
+  -Goal "Verify the sample queue and handoff structure without publishing changes." `
+  -PermissionMode "auto"
+```
+
 ## Agent Activity Dashboard
 
 Open `dashboard/index.html` in a browser to view a local animated dashboard for queue status.
