@@ -63,6 +63,154 @@ templates/agents.md
 templates/claude.md
 ```
 
+## Single Instruction Block Rule
+
+When starting Codex or Claude Code, give one complete instruction block. Do not send the role, goal, file paths, and constraints as separate partial messages.
+
+The runtime must be able to access the paths in the instruction block. A Windows path such as `C:\project\trade\...` only works when the runtime is actually running on that Windows machine or inside an environment where that path is mounted.
+
+Claude.ai web/app chat is not the same as local Claude Code. If Claude is running in a web sandbox, it cannot read local Windows paths, run local `git status`, or update local `handoff.md` and `session-queue.md` unless the files are uploaded or mounted through an approved integration.
+
+The instruction block must include:
+
+- Workspace path
+- Common harness root
+- Project profile path
+- Task root path
+- Handoff path
+- Session queue path
+- Runtime adapter path, such as `AGENTS.md` or `CLAUDE.md`
+- Assigned role
+- Assigned queue item
+- Goal
+- Ownership boundary
+- Publication restriction
+- Required state updates before stopping
+
+This prevents the runtime from acting on an incomplete command and makes the task portable across machines.
+
+Before assigning work, confirm the runtime mode:
+
+| Runtime mode | Local path access | Can update task files | Recommended use |
+| --- | --- | --- | --- |
+| Local Codex in the project workspace | Yes | Yes | Main PM, implementation, verification, publication |
+| Local Claude Code in the project workspace | Yes | Yes | Queue-scoped analysis, implementation, verification |
+| Claude.ai web/app with uploaded files | No direct local path access | No, unless user applies changes manually | Review, critique, planning, read-only analysis |
+| Remote Linux sandbox without mounted workspace | No Windows path access | No | Not suitable for local queue execution |
+
+If the runtime cannot access the workspace path, do not assign it a queue item that requires editing files. Use it only for read-only review with uploaded copies, or switch to a local runtime that can access the project workspace.
+
+## Claude.ai Web Fallback
+
+When using Claude.ai web/app instead of local Claude Code, send a single review bundle rather than local filesystem paths.
+
+The bundle should include:
+
+- Runtime adapter content, usually `templates/claude.md`
+- Project profile content, sanitized if needed
+- Handoff content
+- Session queue content
+- Specific files to review
+- Explicit statement that Claude cannot edit local files directly
+
+Use this format:
+
+```text
+You are reviewing an uploaded harness task bundle in Claude.ai web/app.
+
+You do not have direct access to my local Windows filesystem.
+Do not claim to run git, edit files, or update local task records.
+
+Workspace path on my machine:
+<WORKSPACE_ROOT>
+
+Common harness root on my machine:
+<HARNESS_ROOT>
+
+Task root on my machine:
+<TASK_ROOT>/<task-name>
+
+Uploaded bundle contents:
+1. Runtime adapter content
+2. Project profile content
+3. Handoff content
+4. Session queue content
+5. Files to review
+
+Assigned role:
+<analysis | verify | docs-review>
+
+Assigned queue item:
+<QUEUE-ID>
+
+Goal:
+<specific review goal>
+
+Rules:
+- Treat uploaded content as a snapshot.
+- Do not assume local files are accessible.
+- Do not say you updated session-queue.md or handoff.md.
+- Return a patch-style recommendation or exact replacement text.
+- List which local files I should update.
+- Do not include secrets, credentials, internal URLs, customer data, raw logs, screenshots, or private project identifiers in the response.
+```
+
+For any task that requires direct edits, use local Claude Code or Codex in the same workspace instead of Claude.ai web/app.
+
+Use this format:
+
+```text
+You are running as <Codex | Claude Code> for this project.
+
+Workspace path:
+<WORKSPACE_ROOT>
+
+Common harness root:
+<HARNESS_ROOT>
+
+Runtime adapter:
+<WORKSPACE_ROOT>/AGENTS.md
+or
+<WORKSPACE_ROOT>/CLAUDE.md
+
+Project profile:
+<PROJECT_PROFILE>
+
+Task root:
+<TASK_ROOT>/<task-name>
+
+Handoff:
+<TASK_ROOT>/<task-name>/handoff.md
+
+Session queue:
+<TASK_ROOT>/<task-name>/session-queue.md
+
+Read order:
+1. Runtime adapter
+2. Project profile
+3. Handoff
+4. Session queue
+
+Assigned role:
+<main | analysis | worker | verify | docs>
+
+Assigned queue item:
+<QUEUE-ID>
+
+Goal:
+<specific task goal>
+
+Rules:
+- Perform only the assigned queue item.
+- Work only inside the ownership boundary listed in the queue.
+- Preserve user changes and changes from other agent runtimes.
+- Check local git status before and after work when git is available.
+- Update session-queue.md and handoff.md before stopping.
+- Record changed files, commands run, verification result, remaining work, and blockers.
+- Do not commit, push, open a PR, deploy, or sync unless the user explicitly asks for publication.
+- Do not record secrets, credentials, internal URLs, customer data, raw logs, screenshots, or private project identifiers in the common harness repository.
+```
+
 ## State Contract
 
 Every agent turn should start by reading:
