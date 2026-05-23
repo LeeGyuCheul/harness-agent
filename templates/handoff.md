@@ -12,6 +12,14 @@
 - Session queue: `<TASK_ROOT>/<task-name>/session-queue.md`
 - The user talks to the main agent only. The main agent manages sub-session work through the queue and this handoff.
 
+## Runtime Ownership
+
+- Current PM owner:
+- Previous PM owner:
+- Active tool sessions:
+- Last state writer:
+- Next recommended tool:
+
 ## Related Repositories
 
 | Repository | Branch | Notes |

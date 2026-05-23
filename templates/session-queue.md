@@ -6,6 +6,7 @@
 - User instruction path: user talks to the main agent only
 - Project profile: `<PROJECT_PROFILE>`
 - Handoff: `<TASK_ROOT>/<task-name>/handoff.md`
+- Runtime adapters: `AGENTS.md`, `CLAUDE.md`
 - Overall status: `todo`
 
 ## Common Start Rules
@@ -15,6 +16,7 @@
 3. Work only on queue items assigned to your role.
 4. Do not edit files outside your ownership boundary.
 5. Before stopping, update this queue and `handoff.md`.
+6. When switching between Codex and Claude Code, record the last state writer and next recommended tool in `handoff.md`.
 
 ## Sub-Session Start Prompt
 

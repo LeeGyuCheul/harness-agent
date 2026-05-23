@@ -34,9 +34,12 @@ Store those only in an approved local workspace or company-controlled system.
 docs/
   harness-agent-spec.md
   operating-model.md
+  codex-claude-interoperability.md
   naming-rules.md
   security-rules.md
 templates/
+  agents.md
+  claude.md
   project-profile.md
   handoff.md
   session-queue.md
@@ -55,6 +58,26 @@ scripts/
 4. Ask the main PM agent to run the task using this harness model and the local project profile.
 
 The common harness stays generic. Local project rules stay local.
+
+## Codex And Claude Code Interoperability
+
+For Codex and Claude Code collaboration, use the task bundle as the shared source of truth instead of relying on either tool's private chat history.
+
+Recommended local adapter files:
+
+```text
+AGENTS.md
+CLAUDE.md
+```
+
+Copy from:
+
+```text
+templates/agents.md
+templates/claude.md
+```
+
+Both adapter files should point to the same local project profile, task handoff, and session queue. See `docs/codex-claude-interoperability.md`.
 
 ## Publication Rule
 

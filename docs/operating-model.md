@@ -14,6 +14,24 @@ Run AI coding work through a PM-centered harness where the user talks to one mai
 6. Results are written back to the queue and handoff.
 7. Main agent reviews results and reports the final state.
 
+## Runtime Interoperability
+
+Codex and Claude Code may both use this harness when they share the same local task bundle.
+
+The shared source of truth is:
+
+```text
+<PROJECT_PROFILE>
+handoff.md
+session-queue.md
+```
+
+Use thin local adapter files such as `AGENTS.md` and `CLAUDE.md` to point each tool to the same task state. Do not rely on one tool's private chat history as the only memory for the other tool.
+
+Only one runtime should own the `main` PM role at a time. If ownership changes between Codex and Claude Code, record the change in `handoff.md` and the queue update log.
+
+See `docs/codex-claude-interoperability.md` for the full contract.
+
 ## Git Publication Rule
 
 During active editing, keep changes local. Do not commit, push, publish, or sync every intermediate revision.
@@ -46,6 +64,13 @@ verification-rules.md
 automation-rules.md
 test-record.md
 notes.md
+```
+
+Optional local adapter files:
+
+```text
+AGENTS.md
+CLAUDE.md
 ```
 
 ## Completion Criteria
